@@ -1,0 +1,29 @@
+Forum: 
+https://www.talkchess.com
+
+Wiki: 
+https://www.chessprogramming.org/Main_Page
+
+Bruce Moreland:
+https://web.archive.org/web/20070607231311/http://www.brucemo.com/compchess/programming/index.htm
+
+Robert Hyatt :
+https://web.archive.org/web/20110118221705/http://www.cis.uab.edu/hyatt/
+
+Engine Testing:
+https://ccrl.chessdom.com/ccrl/4040/
+
+Stockfish:
+https://stockfishchess.org/
+
+TSCP:
+http://www.tckerrigan.com/Chess/TSCP/
+
+Winboard:
+http://www.open-aurec.com/wbforum/viewtopic.php?t=51528
+
+Arena Chess GUI:
+http://www.playwitharena.de/
+
+UCI Protocol:
+http://wbec-ridderkerk.nl/html/UCIProtocol.html
