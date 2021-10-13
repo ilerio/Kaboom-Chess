@@ -1,4 +1,5 @@
 import kaboom from "https://unpkg.com/kaboom@next/dist/kaboom.mjs";
+import {temp} from "./defs.js" // TODO: put all function definitions in here
 
 kaboom({
   global: true,
@@ -157,6 +158,7 @@ scene("main", (args = {}) => {
   function drawBoard() {
     for(let i = 0; i < 8; i++) {
       for (let j = 0; j < 8; j++) {
+        // TODO: use indexToWorldPos()
         let x = (size*j) + offsetX
         let y = (size*i) + offsetY
 
@@ -208,15 +210,13 @@ scene("main", (args = {}) => {
     for(let i = 0; i < 8; i++) {
       for (let j = 0; j < 8; j++) {    
 
-        let x = (size*j) + offsetX + peicePosOffset
-        let y = (size*i) + offsetY + peicePosOffset
-
-        board[i][j].pos = pos(x,y);
+        let pos = indexToWorldPos(j,i,false)
+        board[i][j].pos = pos;
 
         if (board[i][j].piece !== null) {
           const p = add([
             sprite(board[i][j].piece),
-            pos(x, y),
+            pos,
             area({}),
             scale(1),
             origin("center"),
@@ -297,9 +297,57 @@ scene("main", (args = {}) => {
     let x = startPos.x;
     let y = startPos.y;
     if (color === "w") {
-
+      //
     }
   }
+
+  function indexToWorldPos(destX, destY, tile) {
+    let x = 0;
+    let y = 0;
+
+    if (tile) {
+      x = (size*destX) + offsetX;
+      y = (size*destY) + offsetY;
+    } else {
+      x = (size*destX) + offsetX + peicePosOffset;
+      y = (size*destY) + offsetY + peicePosOffset;
+    }
+    return pos(x,y);
+  }
+
+  function worldPosToIndex(pos, tile) {
+    let x = 0;
+    let y = 0;
+
+    if (tile) {
+      x = (pos.x - (offsetX)) / size
+      y = (pos.y - (offsetY)) / size
+    } else {
+      x = (pos.x - (offsetX + peicePosOffset)) / size
+      y = (pos.y - (offsetY + peicePosOffset)) / size
+    }
+
+    return {"x": x, "y": y}
+  }
+
+  function tilePosToPeicePos(pos) {
+    let x = worldPosToIndex(pos.x, true).x
+    let y = worldPosToIndex(pos.y, ture).y
+
+    return indexToWorldPos(x,y,false)
+  }
+
+  clicks("tile", (t) => {
+    let x = worldPosToIndex(t.pos, ture).x
+    let y = worldPosToIndex(t.pos, true).y
+    add([
+      sprite("move"),
+      indexToWorldPos(x,y),
+      layer("ui"),
+      origin("center"),
+      "move",
+    ]);
+  });
 
   function init() {
     loadFEN(initFEN);
@@ -342,5 +390,6 @@ scene("main", (args = {}) => {
 
   //debug
   console.log(board[0][0].tile);
+  temp();
 });
 go("main");
