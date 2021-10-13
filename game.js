@@ -19,6 +19,7 @@ loadSprite("wqueen", "sprites/wqueen.png");
 loadSprite("wrook", "sprites/wrook.png");
 loadSprite("highlight", "sprites/highlight.png");
 loadSprite("border", "sprites/border.png");
+loadSprite("move", "sprites/move.png");
 
 loadSound("piece_capture", "sounds/piece_capture.mp3");
 loadSound("piece_move", "sounds/piece_move.mp3");
@@ -39,6 +40,13 @@ scene("main", (args = {}) => {
   let curHover = null;
   let selected = null;
   let curTurn = "white"
+
+  let canCastle = {
+    whiteQeenSide: true,
+    whiteKingSide: true,
+    blackQeenSide: true,
+    blackKingSide: true,
+  }
 
   let board = [
     [{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null}],
@@ -158,12 +166,27 @@ scene("main", (args = {}) => {
             text(fileLetterMap[i], {size: 30}),
             pos(x - 25,y + 20)
           ]);
+
+          //////////DEBUG TODO: DELETE
+          add ([
+            text(i.toString(), {size: 30}),
+            pos(x - 50,y + 20),
+            color(255, 0, 0)
+          ]);
+          //////////DEBUG TODO: DELETE
         }
         if (i === 7) {
           add ([
             text(rankLetterMap[j], {size: 30}),
             pos(x + 20,y + 60)
           ]);
+          //////////DEBUG TODO: DELETE
+          add ([
+            text(j.toString(), {size: 30}),
+            pos(x + 20,y + 90),
+            color(255, 0, 0)
+          ]);
+          //////////DEBUG TODO: DELETE
         }
         
         const tile = add([
@@ -215,6 +238,69 @@ scene("main", (args = {}) => {
     return board[y][x];
   }
 
+  function generateMoveList(piece, startPos) {
+    /*
+      move = {}
+      
+      all:
+      move.end
+      move.capture
+      
+      pawns:
+      move.enpas
+      move.promote
+      move.start
+
+      king:
+      move.castling
+    */
+
+    let moveList = []
+
+    switch (piece) {
+      case "wpawn", "bpawn": 
+        moveList = pawnMoveList(startPos, piece[0]);
+        break;
+      case "wrook", "brook": 
+
+        break;
+      case "wknight", "bknight":
+
+        break;
+      case "wbishop", "bbishop": 
+        
+        break;
+      case "wqueen", "bqueen":
+        
+        break;
+      case "wking", "bking":
+        
+        break;
+    }
+
+    return moveList;
+  }
+
+  function pawnMoveList(startPos, color) {
+    /*
+      moving as a pawn:
+      w: a2 -> a3 or a4 (on first move)
+      b: a7 -> a6 or a5
+
+      enpas capturs can only happen on rank 6 and 3
+
+      capture as a pawn:
+      w:b7xc6 | b7xa6
+      b:b7xc3 | b2xa3
+    */
+
+    let x = startPos.x;
+    let y = startPos.y;
+    if (color === "w") {
+
+    }
+  }
+
   function init() {
     loadFEN(initFEN);
     drawBoard();
@@ -223,16 +309,16 @@ scene("main", (args = {}) => {
 
   hovers("tile", (t) => {
     if (curHover != t) {
-      hoverHight.pos = t.pos
-      readd(hoverHight)
-      let hoverPeice = objectAtid(t._id).piece
+      hoverHight.pos = t.pos;
+      readd(hoverHight);
+      let hoverPeice = objectAtid(t._id).piece;
       if (hoverPeice != null) {
-        hoverHight.hidden = false
+        hoverHight.hidden = false;
       } else {
-        hoverHight.hidden = true
+        hoverHight.hidden = true;
       }
     }
-    curHover = t
+    curHover = t;
   });
 
   clicks("peice", (p) => {
@@ -247,7 +333,8 @@ scene("main", (args = {}) => {
       ]);
     } else if (selected === p) {
       selected = null;
-      destroyAll("highlight")
+      destroyAll("highlight");
+      destroyAll("move");
     }
   });
 
