@@ -32,8 +32,8 @@ scene("main", (args = {}) => {
   const peicePosOffset = 30;
   const w = 90;
   const b = 200;
-  const colorBlack = color(b,b,b);
-  const colorWhite = color(w,w,w);
+  const colorBlack = color(135,175,85);
+  const colorWhite = color(255,255,205);
   const initFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
   let curDraggin = null;
@@ -169,29 +169,32 @@ scene("main", (args = {}) => {
     for (let j = 0; j < 8; j++) {
       let x = (size*j) + OFFSETX
       let y = (size*i) + OFFSETY
+
+      //labeling
+      if (j === 0) {
+        add ([
+          text(fileLetterMap[i], {size: 30}),
+          pos(x - 25,y + 20)
+        ]);
+      }
+      if (i === 7) {
+        add ([
+          text(rankLetterMap[j], {size: 30}),
+          pos(x + 20,y + 60)
+        ]);
+      }
       
       const tile = add([
         rect(size, size),
         pos(x, y),
         area({}),
         layer("board"),
-        (j+i)%2 === 0 ? colorBlack : colorWhite
+        (j+i)%2 === 0 ? colorWhite : colorBlack,
+        "tile"
       ]);
 
       board[i][j].tile = tile;
       tile._id = board[i][j].id
-
-      tile.hovers(() => {
-        if (selected === null) {
-          hoverHight.pos = board[i][j].tile.pos
-          readd(hoverHight)
-          hoverHight.hidden = false
-          curHover = board[i][j].tile
-        }
-        //debug.log(curHover._id)
-      },() => {
-        //on exit hover
-      })
 
       x += peicePosOffset
       y += peicePosOffset
@@ -205,42 +208,51 @@ scene("main", (args = {}) => {
           area({}),
           scale(1),
           origin("center"),
-          drag(),
+          //drag(),
           layer("peice"),
           "peice",
+          board[i][j].piece,
+          color(255,255,255)
         ]);
-
-        p.hovers(() => {
-          if (curDraggin === null) {
-            cursor("grab");
-          } else {
-            cursor("grabbing");
-          }
-        }, () => {
-          //on exit hover
-        });
-
-        p.clicks(() => {
-          if (selected === p) {
-            selected = null
-            debug.log("un-selected: " + p._id)
-          } else {
-            selected = p;
-            debug.log("selected: " + p._id)
-          }
-        });
 
         board[i][j].piece = p
       }
     }
   }
-  mouseDown(() => {
-    cursor("grabbing");
-  });
   //action(() => cursor("default"));
 
+  hovers("tile", (t) => {
+    if (selected === null) {
+      hoverHight.pos = t.pos
+      readd(hoverHight)
+      curHover = t
+    }
+  },() => {
+    //on exit hover
+  })
+
+  hovers("peice", (p) => {
+    /*if (curDraggin === null) {
+      cursor("grab");
+    } else if (curDraggin === p) {
+      cursor("grabbing");
+    }*/
+  }, () => {
+    //on exit hover
+  });
+
+  clicks("peice", (p) => {
+    console.log(p.color);
+    if (selected === null) {
+      selected = p;
+      debug.log("selected: " + p._id);
+    } else if (selected === p) {
+      selected = null;
+      debug.log("un-selected: " + p._id);
+    }
+  });
+
   //debug
-  console.log(board[0][0]);
-  console.log(hoverHight);
+  console.log(board[0][0].piece);
 });
 go("main");
