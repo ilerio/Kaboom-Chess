@@ -42,6 +42,8 @@ scene("main", (args = {}) => {
   let selected = null;
   let curTurn = "white"
 
+  let fiftyMoveRule = 0
+
   let canCastle = {
     whiteQeenSide: true,
     whiteKingSide: true,
