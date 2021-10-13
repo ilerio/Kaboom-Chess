@@ -32,8 +32,6 @@ scene("main", (args = {}) => {
   const offsetX = ((width()/2) - 240);
   const offsetY = ((height()/2) - 240);
   const peicePosOffset = 30;
-  const w = 90;
-  const b = 200;
   const colorBlack = color(135,175,85);
   const colorWhite = color(255,255,205);
   const initFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
@@ -242,19 +240,19 @@ scene("main", (args = {}) => {
 
   function generateMoveList(piece, startPos) {
     /*
-      move = {}
+      let move = {}
       
-      all:
-      move.end
-      move.capture
+      //all:
+      move.end = pos
+      move.capture = ture
       
-      pawns:
-      move.enpas
-      move.promote
-      move.start
+      //pawns:
+      move.enpas = true
+      move.promote = true
+      move.start = pos
 
-      king:
-      move.castling
+      //king:
+      move.castling = true
     */
 
     let moveList = []
@@ -334,13 +332,13 @@ scene("main", (args = {}) => {
 
   function tilePosToPeicePos(pos) {
     let x = worldPosToIndex(pos.x, true).x
-    let y = worldPosToIndex(pos.y, ture).y
+    let y = worldPosToIndex(pos.y, true).y
 
     return indexToWorldPos(x,y,false)
   }
 
   clicks("tile", (t) => {
-    let x = worldPosToIndex(t.pos, ture).x
+    /*let x = worldPosToIndex(t.pos, true).x
     let y = worldPosToIndex(t.pos, true).y
     add([
       sprite("move"),
@@ -348,7 +346,7 @@ scene("main", (args = {}) => {
       layer("ui"),
       origin("center"),
       "move",
-    ]);
+    ]);*/
   });
 
   function init() {
