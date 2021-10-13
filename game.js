@@ -38,6 +38,7 @@ scene("main", (args = {}) => {
 
   let curHover = null;
   let selected = null;
+  let curTurn = "white"
 
   let board = [
     [{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null}],
@@ -83,11 +84,32 @@ scene("main", (args = {}) => {
     6:"g",
     7:"h",
   }
+  let fileLetterUnMap = {
+    "8":0,
+    "7":1,
+    "6":2,
+    "5":3,
+    "4":4,
+    "3":5,
+    "2":6,
+    "1":7,
+  }
+  let rankLetterUnMap = {
+    "a":0,
+    "b":1,
+    "c":2,
+    "d":3,
+    "e":4,
+    "f":5,
+    "g":6,
+    "h":7,
+  }
   let hoverHight = add([
     sprite("border"),
     pos(offsetX, offsetY),
     layer("boarder"),
   ]);
+  hoverHight.hidden = true
 
   function isNumeric(str) {
     if (typeof str != "string") return false
@@ -124,37 +146,38 @@ scene("main", (args = {}) => {
     }
   }
 
-  // draw board
-  for(let i = 0; i < 8; i++) {
-    for (let j = 0; j < 8; j++) {
-      let x = (size*j) + offsetX
-      let y = (size*i) + offsetY
+  function drawBoard() {
+    for(let i = 0; i < 8; i++) {
+      for (let j = 0; j < 8; j++) {
+        let x = (size*j) + offsetX
+        let y = (size*i) + offsetY
 
-      //labeling
-      if (j === 0) {
-        add ([
-          text(fileLetterMap[i], {size: 30}),
-          pos(x - 25,y + 20)
+        //labeling
+        if (j === 0) {
+          add ([
+            text(fileLetterMap[i], {size: 30}),
+            pos(x - 25,y + 20)
+          ]);
+        }
+        if (i === 7) {
+          add ([
+            text(rankLetterMap[j], {size: 30}),
+            pos(x + 20,y + 60)
+          ]);
+        }
+        
+        const tile = add([
+          rect(size, size),
+          pos(x, y),
+          area({}),
+          layer("board"),
+          (j+i)%2 === 0 ? colorWhite : colorBlack,
+          "tile"
         ]);
-      }
-      if (i === 7) {
-        add ([
-          text(rankLetterMap[j], {size: 30}),
-          pos(x + 20,y + 60)
-        ]);
-      }
-      
-      const tile = add([
-        rect(size, size),
-        pos(x, y),
-        area({}),
-        layer("board"),
-        (j+i)%2 === 0 ? colorWhite : colorBlack,
-        "tile"
-      ]);
 
-      board[i][j].tile = tile;
-      tile._id = board[i][j].id
+        tile._id = board[i][j].id
+        board[i][j].tile = tile;
+      }
     }
   }
 
@@ -177,6 +200,7 @@ scene("main", (args = {}) => {
             layer("peice"),
             "peice",
             board[i][j].piece,
+            board[i][j].piece[0] === "w" ? "white" : "black",
           ]);
 
           board[i][j].piece = p
@@ -185,25 +209,34 @@ scene("main", (args = {}) => {
     }
   }
 
+  function objectAtid(id) {
+    let x = rankLetterUnMap[id[0]];
+    let y = fileLetterUnMap[id[1]];
+    return board[y][x];
+  }
+
   function init() {
     loadFEN(initFEN);
+    drawBoard();
     drawPeices();
   }
 
-  //action(() => cursor("default"));
-
   hovers("tile", (t) => {
-    if (selected === null) {
+    if (curHover != t) {
       hoverHight.pos = t.pos
       readd(hoverHight)
-      curHover = t
+      let hoverPeice = objectAtid(t._id).piece
+      if (hoverPeice != null) {
+        hoverHight.hidden = false
+      } else {
+        hoverHight.hidden = true
+      }
     }
-  },() => {
-    //on exit hover
+    curHover = t
   });
 
   clicks("peice", (p) => {
-    if (selected === null) {
+    if (selected === null && p.is(curTurn)) {
       selected = p;
       add([
         sprite("highlight"),
@@ -221,6 +254,6 @@ scene("main", (args = {}) => {
   init();
 
   //debug
-  console.log(board[0][0].piece);
+  console.log(board[0][0].tile);
 });
 go("main");
