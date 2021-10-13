@@ -1,3 +1,3 @@
-export function temp () {
-  debug.log("import successful!")
+export function log (str) {
+  debug.log(str)
 }
