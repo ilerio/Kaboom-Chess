@@ -17,7 +17,7 @@ loadSprite("wknight", "sprites/wknight.png");
 loadSprite("wpawn", "sprites/wpawn.png");
 loadSprite("wqueen", "sprites/wqueen.png");
 loadSprite("wrook", "sprites/wrook.png");
-loadSprite("empty", "sprites/empty.png");
+loadSprite("highlight", "sprites/highlight.png");
 loadSprite("border", "sprites/border.png");
 
 loadSound("piece_capture", "sounds/piece_capture.mp3");
@@ -27,8 +27,8 @@ scene("main", (args = {}) => {
   layers(["board", "boarder", "peice", "ui"]);
 
   const size = 60;
-  const OFFSETX = ((width()/2) - 240);
-  const OFFSETY = ((height()/2) - 240);
+  const offsetX = ((width()/2) - 240);
+  const offsetY = ((height()/2) - 240);
   const peicePosOffset = 30;
   const w = 90;
   const b = 200;
@@ -36,7 +36,6 @@ scene("main", (args = {}) => {
   const colorWhite = color(255,255,205);
   const initFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
-  let curDraggin = null;
   let curHover = null;
   let selected = null;
 
@@ -86,17 +85,9 @@ scene("main", (args = {}) => {
   }
   let hoverHight = add([
     sprite("border"),
-    pos(OFFSETX, OFFSETY),
+    pos(offsetX, offsetY),
     layer("boarder"),
   ]);
-
-  class Piece {
-    constructor (pos,piece,color) {  
-      this.pos = pos
-      this.piece = piece
-      this.color = color
-    }
-  }
 
   function isNumeric(str) {
     if (typeof str != "string") return false
@@ -118,57 +109,26 @@ scene("main", (args = {}) => {
       let temp = 0
       if (isNumeric(cur)) {
         for (let j = 0; j < cur; j++) {
-          board[fileIndex][rankIndex].id = rankLetterMap[rankIndex]+fileLetterMap[fileIndex]
-          rankIndex++
+          board[fileIndex][rankIndex].id = rankLetterMap[rankIndex]+fileLetterMap[fileIndex];
+          board[fileIndex][rankIndex].piece = null;
+          rankIndex++;
         }
       } else if (cur === "/") {
-        fileIndex++
-        rankIndex = 0
+        fileIndex++;
+        rankIndex = 0;
       } else {
-        board[fileIndex][rankIndex].id = rankLetterMap[rankIndex]+fileLetterMap[fileIndex]
-        board[fileIndex][rankIndex].piece = pieceSpriteMap[cur]
-        rankIndex++
+        board[fileIndex][rankIndex].id = rankLetterMap[rankIndex]+fileLetterMap[fileIndex];
+        board[fileIndex][rankIndex].piece = pieceSpriteMap[cur];
+        rankIndex++;
       }
     }
   }
-  loadFEN(initFEN);
 
-  // custom component for handling drag & drop behavior
-  function drag() {
-
-    // the difference between object pos and mouse pos
-    let offset = vec2(0);
-
-    return {
-      id: "drag",
-      require: [ "pos", "area", ],
-      add() {
-        this.clicks(() => {
-          if (curDraggin) {
-            return;
-          }
-          curDraggin = this;
-          offset = mousePos().sub(this.pos);
-          this.z = z(999)
-        });
-      },
-      update() {
-        if (curDraggin === this) {
-          this.pos = mousePos().sub(offset);
-        }
-      },
-    };
-
-  }
-  // drop
-  mouseRelease(() => { 
-    curDraggin = null;
-  });
-
+  // draw board
   for(let i = 0; i < 8; i++) {
     for (let j = 0; j < 8; j++) {
-      let x = (size*j) + OFFSETX
-      let y = (size*i) + OFFSETY
+      let x = (size*j) + offsetX
+      let y = (size*i) + offsetY
 
       //labeling
       if (j === 0) {
@@ -195,30 +155,41 @@ scene("main", (args = {}) => {
 
       board[i][j].tile = tile;
       tile._id = board[i][j].id
+    }
+  }
 
-      x += peicePosOffset
-      y += peicePosOffset
+  function drawPeices() {
+    for(let i = 0; i < 8; i++) {
+      for (let j = 0; j < 8; j++) {    
 
-      board[i][j].pos = pos(x,y);
+        let x = (size*j) + offsetX + peicePosOffset
+        let y = (size*i) + offsetY + peicePosOffset
 
-      if (board[i][j].piece !== null) {
-        const p = add([
-          sprite(board[i][j].piece),
-          pos(x, y),
-          area({}),
-          scale(1),
-          origin("center"),
-          //drag(),
-          layer("peice"),
-          "peice",
-          board[i][j].piece,
-          color(255,255,255)
-        ]);
+        board[i][j].pos = pos(x,y);
 
-        board[i][j].piece = p
+        if (board[i][j].piece !== null) {
+          const p = add([
+            sprite(board[i][j].piece),
+            pos(x, y),
+            area({}),
+            scale(1),
+            origin("center"),
+            layer("peice"),
+            "peice",
+            board[i][j].piece,
+          ]);
+
+          board[i][j].piece = p
+        }
       }
     }
   }
+
+  function init() {
+    loadFEN(initFEN);
+    drawPeices();
+  }
+
   //action(() => cursor("default"));
 
   hovers("tile", (t) => {
@@ -229,28 +200,25 @@ scene("main", (args = {}) => {
     }
   },() => {
     //on exit hover
-  })
-
-  hovers("peice", (p) => {
-    /*if (curDraggin === null) {
-      cursor("grab");
-    } else if (curDraggin === p) {
-      cursor("grabbing");
-    }*/
-  }, () => {
-    //on exit hover
   });
 
   clicks("peice", (p) => {
-    console.log(p.color);
     if (selected === null) {
       selected = p;
-      debug.log("selected: " + p._id);
+      add([
+        sprite("highlight"),
+        pos(p.pos.x,p.pos.y),
+        layer("ui"),
+        origin("center"),
+        "highlight",
+      ]);
     } else if (selected === p) {
       selected = null;
-      debug.log("un-selected: " + p._id);
+      destroyAll("highlight")
     }
   });
+
+  init();
 
   //debug
   console.log(board[0][0].piece);
