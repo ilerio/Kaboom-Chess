@@ -27,3 +27,7 @@ http://www.playwitharena.de/
 
 UCI Protocol:
 http://wbec-ridderkerk.nl/html/UCIProtocol.html
+
+YouTube:
+https://youtu.be/bGAfaepBco4 (resource video)
+http://www.bluefeversoft.com/Chess/index.html (full project)
