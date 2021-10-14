@@ -1,5 +1,5 @@
 import kaboom from "https://unpkg.com/kaboom@next/dist/kaboom.mjs";
-import {log,} from "./defs.js" // TODO: put all function definitions in here
+import {dlog, clog} from "./defs.js" // TODO: put all function definitions in here
 
 kaboom({
   global: true,
@@ -309,7 +309,7 @@ scene("main", (args = {}) => {
       case "wqueen": case "bqueen":
         
         break;
-      case "wking": case "bking":s
+      case "wking": case "bking":
         
         break;
     }
@@ -432,11 +432,17 @@ scene("main", (args = {}) => {
     let startYIndex = worldPosToIndex(p.pos, false).y;
     let destXIndex = worldPosToIndex(dest, false).x;
     let destYIndex = worldPosToIndex(dest, false).y;
-
+    let name = getPeiceName(p)
 
     p.pos = dest
-    board[destYIndex, destXIndex].piece = p;
-    board[startYIndex, startXIndex].piece = null;
+    board[destYIndex][destXIndex].piece = p;
+    board[startYIndex][startXIndex].piece = null;
+
+    if (name[0] === "w") {
+      curTurn = "black"
+    } else {
+      curTurn = "white"
+    }
   }
 
   function init() {
@@ -448,13 +454,12 @@ scene("main", (args = {}) => {
   clicks("move", (m) => {
     if (selected != null) {
       movePeice(selected, m.pos);
-      selected.trigger("clicks");
     }
   });
 
   /*clicks("tile", (t) => {
-    log("tile " + t._id + ": pos.x = " +t.pos.x); 
-    log("tile " + t._id + ": pos.t = " +t.pos.y);
+    dlog("tile " + t._id + ": pos.x = " +t.pos.x); 
+    dlog("tile " + t._id + ": pos.t = " +t.pos.y);
   });*/
 
   hovers("tile", (t) => {
@@ -472,7 +477,7 @@ scene("main", (args = {}) => {
   });
 
   clicks("peice", (p) => {
-    if (selected === null /*&& p.is(curTurn)*/) {
+    if (selected === null && p.is(curTurn)) {
       selected = p;
       add([
         sprite("highlight"),
@@ -492,6 +497,6 @@ scene("main", (args = {}) => {
   init();
 
   //debug
-  //console.log(board[0][0].tile);
+  //console.dlog(board[0][0].tile);
 });
 go("main");

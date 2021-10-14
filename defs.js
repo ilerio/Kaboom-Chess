@@ -1,3 +1,7 @@
-export function log (str) {
-  debug.log(str)
+export function dlog (a) {
+  debug.log(a)
+}
+
+export function clog (a) {
+  console.log(a)
 }
