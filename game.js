@@ -355,38 +355,36 @@ scene("main", (args = {}) => {
     let y = worldPosToIndex(startPos, false).y;
 
     if (color === "w") {
-      if (y === 6) { // start move
-        if (board[y-2][x].piece === null) {
-          moveList.push({
-            "pos": indexToWorldPos(x, (y-2), false),
-            "capture": false,
-          });
-        }
-      }
-
       if (board[y-1][x].piece === null) {
         moveList.push({
           "pos": indexToWorldPos(x, (y-1), false),
           "capture": false,
         });
+        if (y === 6) { // start move
+          if (board[y-2][x].piece === null) {
+            moveList.push({
+              "pos": indexToWorldPos(x, (y-2), false),
+              "capture": false,
+            });
+          }
+        }
       }
     } 
 
     if (color === "b") {
-      if (y === 1) { // start move
-        if (board[y+2][x].piece === null) {
-          moveList.push({
-            "pos": indexToWorldPos(x, (y+2), false),
-            "capture": false,
-          });
-        }
-      }
-
       if (board[y+1][x].piece === null) {
         moveList.push({
           "pos": indexToWorldPos(x, (y+1), false),
           "capture": false,
         });
+        if (y === 1) { // start move
+          if (board[y+2][x].piece === null) {
+            moveList.push({
+              "pos": indexToWorldPos(x, (y+2), false),
+              "capture": false,
+            });
+          }
+        }
       }
     }
     return moveList;
@@ -428,6 +426,19 @@ scene("main", (args = {}) => {
     return indexToWorldPos(x,y,false)
   }
 
+  function movePeice(p, dest) {
+    // handle captures
+    let startXIndex = worldPosToIndex(p.pos, false).x;
+    let startYIndex = worldPosToIndex(p.pos, false).y;
+    let destXIndex = worldPosToIndex(dest, false).x;
+    let destYIndex = worldPosToIndex(dest, false).y;
+
+
+    p.pos = dest
+    board[destYIndex, destXIndex].piece = p;
+    board[startYIndex, startXIndex].piece = null;
+  }
+
   function init() {
     loadFEN(initFEN);
     drawBoard();
@@ -435,7 +446,10 @@ scene("main", (args = {}) => {
   }
 
   clicks("move", (m) => {
-    log("move " + m._id + " clicked!"); 
+    if (selected != null) {
+      movePeice(selected, m.pos);
+      selected.trigger("clicks");
+    }
   });
 
   /*clicks("tile", (t) => {
