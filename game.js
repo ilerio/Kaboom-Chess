@@ -1,5 +1,5 @@
 import kaboom from "https://unpkg.com/kaboom@next/dist/kaboom.mjs";
-import {temp} from "./defs.js" // TODO: put all function definitions in here
+import {log,} from "./defs.js" // TODO: put all function definitions in here
 
 kaboom({
   global: true,
@@ -132,7 +132,7 @@ scene("main", (args = {}) => {
     let piecePos = []
 
     fenArr = fen.split(" ") //TODO: implement rest of FEN
-    console.log("fenArr[0]: ", fenArr[0])
+    //console.log("fenArr[0]: ", fenArr[0])
 
     piecePos = fenArr[0].split("")
     for (let i = 0; i < piecePos.length; i++) {
@@ -238,9 +238,44 @@ scene("main", (args = {}) => {
     return board[y][x];
   }
 
-  function generateMoveList(piece, startPos) {
+  function getPeiceName(p) {
+    let name = "";
+    if (p.is("bking")) {
+      name = "bking";
+    } else if (p.is("bpawn")) {
+      name = "bpawn";
+    } else if (p.is("bknight")) {
+      name = "bknight";
+    } else if (p.is("bbishop")) {
+      name = "bbishop";
+    } else if (p.is("brook")) {
+      name = "brook";
+    } else if (p.is("bqueen")) {
+      name = "bqueen";
+    } else if (p.is("wking")) {
+      name = "wking";
+    } else if (p.is("wpawn")) {
+      name = "wpawn";
+    } else if (p.is("wknight")) {
+      name = "wknight";
+    } else if (p.is("wbishop")) {
+      name = "wbishop";
+    } else if (p.is("wrook")) {
+      name = "wrook";
+    } else if (p.is("wqueen")) {
+      name = "wqueen";
+    } else {
+      name = "ERROR";
+    }
+    return name;
+  }
+
+  function generateMoveList(p) {
     /*
-      let move = {}
+      move {
+        pos: pos(x,y),
+        capture: false,
+      }
       
       //all:
       move.end = pos
@@ -256,36 +291,58 @@ scene("main", (args = {}) => {
     */
 
     let moveList = []
+    let pieceName = getPeiceName(p);
 
-    switch (piece) {
-      case "wpawn", "bpawn": 
-        moveList = pawnMoveList(startPos, piece[0]);
+    switch (pieceName) {
+      case "wpawn": case "bpawn": 
+        moveList = pawnMoveList(p.pos, pieceName[0]);
         break;
-      case "wrook", "brook": 
-
-        break;
-      case "wknight", "bknight":
+      case "wrook": case "brook": 
 
         break;
-      case "wbishop", "bbishop": 
+      case "wknight": case "bknight":
+
+        break;
+      case "wbishop": case "bbishop": 
         
         break;
-      case "wqueen", "bqueen":
+      case "wqueen": case "bqueen":
         
         break;
-      case "wking", "bking":
+      case "wking": case "bking":s
         
         break;
     }
 
-    return moveList;
+    drawMoves(moveList);
+  }
+
+  function drawMoves(moves) {
+    for (let i = 0; i < moves.length; i++) {
+      let dest = moves[i].pos;
+      add([
+        sprite("move"),
+        dest,
+        area({}),
+        layer("ui"),
+        origin("center"),
+        "move",
+      ]);
+    }
   }
 
   function pawnMoveList(startPos, color) {
     /*
+      move {
+        pos: pos(x,y),
+        capture: false,
+        enpas: false,
+        promote: false,
+      }
+
       moving as a pawn:
-      w: a2 -> a3 or a4 (on first move)
-      b: a7 -> a6 or a5
+      w: a2 -> a3 or a4 (on first move) // down in the y direction
+      b: a7 -> a6 or a5 // up in the y direction
 
       enpas capturs can only happen on rank 6 and 3
 
@@ -293,12 +350,46 @@ scene("main", (args = {}) => {
       w:b7xc6 | b7xa6
       b:b7xc3 | b2xa3
     */
+    let moveList = []
+    let x = worldPosToIndex(startPos, false).x;
+    let y = worldPosToIndex(startPos, false).y;
 
-    let x = startPos.x;
-    let y = startPos.y;
     if (color === "w") {
-      //
+      if (y === 6) { // start move
+        if (board[y-2][x].piece === null) {
+          moveList.push({
+            "pos": indexToWorldPos(x, (y-2), false),
+            "capture": false,
+          });
+        }
+      }
+
+      if (board[y-1][x].piece === null) {
+        moveList.push({
+          "pos": indexToWorldPos(x, (y-1), false),
+          "capture": false,
+        });
+      }
+    } 
+
+    if (color === "b") {
+      if (y === 1) { // start move
+        if (board[y+2][x].piece === null) {
+          moveList.push({
+            "pos": indexToWorldPos(x, (y+2), false),
+            "capture": false,
+          });
+        }
+      }
+
+      if (board[y+1][x].piece === null) {
+        moveList.push({
+          "pos": indexToWorldPos(x, (y+1), false),
+          "capture": false,
+        });
+      }
     }
+    return moveList;
   }
 
   function indexToWorldPos(destX, destY, tile) {
@@ -327,7 +418,7 @@ scene("main", (args = {}) => {
       y = (pos.y - (offsetY + peicePosOffset)) / size
     }
 
-    return {"x": x, "y": y}
+    return {"x": x, "y": y};
   }
 
   function tilePosToPeicePos(pos) {
@@ -337,23 +428,20 @@ scene("main", (args = {}) => {
     return indexToWorldPos(x,y,false)
   }
 
-  clicks("tile", (t) => {
-    /*let x = worldPosToIndex(t.pos, true).x
-    let y = worldPosToIndex(t.pos, true).y
-    add([
-      sprite("move"),
-      indexToWorldPos(x,y),
-      layer("ui"),
-      origin("center"),
-      "move",
-    ]);*/
-  });
-
   function init() {
     loadFEN(initFEN);
     drawBoard();
     drawPeices();
   }
+
+  clicks("move", (m) => {
+    log("move " + m._id + " clicked!"); 
+  });
+
+  /*clicks("tile", (t) => {
+    log("tile " + t._id + ": pos.x = " +t.pos.x); 
+    log("tile " + t._id + ": pos.t = " +t.pos.y);
+  });*/
 
   hovers("tile", (t) => {
     if (curHover != t) {
@@ -370,15 +458,16 @@ scene("main", (args = {}) => {
   });
 
   clicks("peice", (p) => {
-    if (selected === null && p.is(curTurn)) {
+    if (selected === null /*&& p.is(curTurn)*/) {
       selected = p;
       add([
         sprite("highlight"),
         pos(p.pos.x,p.pos.y),
-        layer("ui"),
+        layer("board"),
         origin("center"),
         "highlight",
       ]);
+      generateMoveList(p);
     } else if (selected === p) {
       selected = null;
       destroyAll("highlight");
@@ -389,7 +478,6 @@ scene("main", (args = {}) => {
   init();
 
   //debug
-  console.log(board[0][0].tile);
-  temp();
+  //console.log(board[0][0].tile);
 });
 go("main");
