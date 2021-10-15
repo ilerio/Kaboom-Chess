@@ -21,6 +21,7 @@ loadSprite("wrook", "sprites/wrook.png");
 loadSprite("highlight", "sprites/highlight.png");
 loadSprite("border", "sprites/border.png");
 loadSprite("move", "sprites/move.png");
+loadSprite("attack", "sprites/attack.png");
 
 loadSound("piece_capture", "sounds/piece_capture.mp3");
 loadSound("piece_move", "sounds/piece_move.mp3");
@@ -34,6 +35,10 @@ scene("main", (args = {}) => {
   const peicePosOffset = 30;
   const colorBlack = color(135,175,85);
   const colorWhite = color(255,255,205);
+
+  const maxIndex = 7;
+  const minIndex = 0;
+
   const initFEN = "rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1";
 
   let curHover = null;
@@ -267,6 +272,7 @@ scene("main", (args = {}) => {
     } else {
       name = "ERROR";
     }
+    
     return name;
   }
 
@@ -279,7 +285,7 @@ scene("main", (args = {}) => {
       
       //all:
       move.end = pos
-      move.capture = ture
+      move.capture = true
       
       //pawns:
       move.enpas = true
@@ -290,7 +296,7 @@ scene("main", (args = {}) => {
       move.castling = true
     */
 
-    let moveList = []
+    let moveList = [];
     let pieceName = getPeiceName(p);
 
     switch (pieceName) {
@@ -301,7 +307,7 @@ scene("main", (args = {}) => {
 
         break;
       case "wknight": case "bknight":
-
+        moveList = knightMoveList(p.pos, pieceName[0]);
         break;
       case "wbishop": case "bbishop": 
         
@@ -318,10 +324,16 @@ scene("main", (args = {}) => {
   }
 
   function drawMoves(moves) {
+    let spriteName = "";
     for (let i = 0; i < moves.length; i++) {
       let dest = moves[i].pos;
+      if (moves[i].capture) {
+        spriteName = "attack";
+      } else {
+        spriteName = "move";
+      }
       add([
-        sprite("move"),
+        sprite(spriteName),
         dest,
         area({}),
         layer("ui"),
@@ -350,43 +362,134 @@ scene("main", (args = {}) => {
       w:b7xc6 | b7xa6
       b:b7xc3 | b2xa3
     */
-    let moveList = []
+    let moveList = [];
+    let x = worldPosToIndex(startPos, false).x;
+    let y = worldPosToIndex(startPos, false).y;
+    let m = null;
+    let dir = 1;
+    let promote = false;
+
+    if (color === "w") {
+      dir *= -1;
+    }
+
+    if (y+(1*dir) === 7 || y+(1*dir) === 0) { //TODO PROMOTE
+
+    }
+
+    // do off board check // TODO
+    if (board[y+(1*dir)][x].piece === null) {
+      m = indexToWorldPos(x, (y+(1*dir)), false);
+      moveList.push({
+        "pos": m,
+        "capture": false,
+        "enpas": false,
+        "promote": false,
+      });
+      if ((y === 6 && color === "w") || (y === 1 && color === "b")) { // start move
+        if (board[y+(2*dir)][x].piece === null) {
+          m = indexToWorldPos(x, (y+(2*dir)), false);
+          moveList.push({
+            "pos": m,
+            "capture": false,
+            "enpas": false,
+            "promote": false,
+          });
+        }
+      }
+    }
+
+    // TODO: Enpasant | Promotion
+    if ((y+(1*dir)) >= minIndex && (y+(1*dir)) <= maxIndex) { 
+      if (x+1 >= minIndex && x+1 <= maxIndex) {
+        m = indexToWorldPos(x+1, (y+(1*dir)), false);
+        if (isMoveCapture(m, color)) {
+          moveList.push({
+            "pos": m,
+            "capture": true,
+            "enpas": false,
+            "promote": false,
+          });
+        }
+      }
+      if (x-1 >= minIndex && x-1 <= maxIndex) {
+        m = indexToWorldPos(x-1, (y+(1*dir)), false);
+        if (isMoveCapture(m, color)) {
+          moveList.push({
+            "pos": m,
+            "capture": true,
+            "enpas": false,
+            "promote": false,
+          });
+        }
+      }
+    }
+
+    return moveList;
+  }
+
+  function knightMoveList(startPos, color) {
+    /*
+       move {
+        pos: pos(x,y),
+        capture: false,
+      }
+
+      moving as a knight:
+      all knight moves:
+      y-2, x-1
+      y-2, x+1
+      y+2, x-1
+      y+2, x+1
+      y-1, x-2
+      y+1, x-2
+      y-1, x+2
+      y-2, x+2
+    */
+
+    let moveList = [];
     let x = worldPosToIndex(startPos, false).x;
     let y = worldPosToIndex(startPos, false).y;
 
-    if (color === "w") {
-      if (board[y-1][x].piece === null) {
-        moveList.push({
-          "pos": indexToWorldPos(x, (y-1), false),
-          "capture": false,
-        });
-        if (y === 6) { // start move
-          if (board[y-2][x].piece === null) {
+    let y2 = 0;
+    let x2 = 0;
+    let y1 = 0;
+    let x1 = 0;
+
+    let one = 1;
+    let two = 2;
+
+    let m = null;
+
+    for (let i = 1; i <= 2; i++) {
+      two *= -1;
+      for (let j = 1; j <= 2; j++) {
+        one *= -1;
+        y2 = y+two;
+        x2 = x+two;
+        y1 = y+one;
+        x1 = x+one;
+        if (y2 >= minIndex && y2 <= maxIndex && x1 >= minIndex && x1 <= maxIndex) {
+          m = indexToWorldPos(x1, y2);
+          if (!moveToPosHasFriendly(m, color)) {
             moveList.push({
-              "pos": indexToWorldPos(x, (y-2), false),
-              "capture": false,
+              "pos": m,
+              "capture": isMoveCapture(startPos, m),
             });
           }
         }
-      }
-    } 
-
-    if (color === "b") {
-      if (board[y+1][x].piece === null) {
-        moveList.push({
-          "pos": indexToWorldPos(x, (y+1), false),
-          "capture": false,
-        });
-        if (y === 1) { // start move
-          if (board[y+2][x].piece === null) {
+        if (x2 >= minIndex && x2 <= maxIndex && y1 >= minIndex && y1 <= maxIndex) {
+          m = indexToWorldPos(x2, y1);
+          if (!moveToPosHasFriendly(m, color)) {
             moveList.push({
-              "pos": indexToWorldPos(x, (y+2), false),
-              "capture": false,
+              "pos": m,
+              "capture": isMoveCapture(startPos, m),
             });
           }
         }
       }
     }
+
     return moveList;
   }
 
@@ -420,10 +523,9 @@ scene("main", (args = {}) => {
   }
 
   function tilePosToPeicePos(pos) {
-    let x = worldPosToIndex(pos.x, true).x
-    let y = worldPosToIndex(pos.y, true).y
-
-    return indexToWorldPos(x,y,false)
+    let x = worldPosToIndex(pos, true).x
+    let y = worldPosToIndex(pos, true).y
+    return indexToWorldPos(x,y,false).pos
   }
 
   function movePeice(p, dest) {
@@ -432,17 +534,61 @@ scene("main", (args = {}) => {
     let startYIndex = worldPosToIndex(p.pos, false).y;
     let destXIndex = worldPosToIndex(dest, false).x;
     let destYIndex = worldPosToIndex(dest, false).y;
-    let name = getPeiceName(p)
+    let name = getPeiceName(p);
 
-    p.pos = dest
+    //capture
+    let destPeice = board[destYIndex][destXIndex].piece;
+    if (destPeice != null) {
+      destroy(destPeice);
+    }
+
+    p.pos = dest;
+
     board[destYIndex][destXIndex].piece = p;
     board[startYIndex][startXIndex].piece = null;
 
+    // advance turn
     if (name[0] === "w") {
-      curTurn = "black"
+      curTurn = "black";
     } else {
-      curTurn = "white"
+      curTurn = "white";
     }
+
+    // TODO: 50 move rule 
+  }
+
+  function isMoveCapture(move, color) {
+    let pos = move.pos    
+    let x = worldPosToIndex(pos, false).x;
+    let y = worldPosToIndex(pos, false).y;
+    let p = board[y][x].piece
+
+    if (p === null) return false;
+
+    let name = getPeiceName(p);
+
+    if (name[0] === color) {
+      return false;
+    }
+
+    return true;
+  }
+
+  function moveToPosHasFriendly(move, color) {
+    let pos = move.pos    
+    let x = worldPosToIndex(pos, false).x;
+    let y = worldPosToIndex(pos, false).y;
+    let p = board[y][x].piece
+
+    if (p === null) return false;
+
+    let name = getPeiceName(p);
+
+    if (name[0] === color) {
+      return true;
+    }
+
+    return false;
   }
 
   function init() {
@@ -457,9 +603,21 @@ scene("main", (args = {}) => {
     }
   });
 
+  clicks("attack", (m) => { // TODO: capture
+    if (selected != null) {
+      movePeice(selected, m.pos);
+    }
+  });
+
   /*clicks("tile", (t) => {
-    dlog("tile " + t._id + ": pos.x = " +t.pos.x); 
-    dlog("tile " + t._id + ": pos.t = " +t.pos.y);
+    add([
+      sprite("attack"),
+      pos(tilePosToPeicePos(t.pos)),
+      area({}),
+      layer("ui"),
+      origin("center"),
+      "move",
+    ]);
   });*/
 
   hovers("tile", (t) => {
@@ -497,6 +655,6 @@ scene("main", (args = {}) => {
   init();
 
   //debug
-  //console.dlog(board[0][0].tile);
+  //clog(board[0][0].tile);
 });
 go("main");
