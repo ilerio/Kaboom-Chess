@@ -201,7 +201,7 @@ scene("main", (args = {}) => {
         const tile = add([
           rect(size, size),
           pos(x, y),
-          area({}),
+          area(),
           layer("board"),
           (j+i)%2 === 0 ? colorWhite : colorBlack,
           "tile",
@@ -224,7 +224,7 @@ scene("main", (args = {}) => {
           const p = add([
             sprite(board[i][j].piece),
             pos,
-            area({}),
+            area(),
             scale(1),
             origin("center"),
             layer("peice"),
@@ -337,7 +337,7 @@ scene("main", (args = {}) => {
       add([
         sprite(spriteName),
         dest,
-        area({}),
+        area(),
         layer("ui"),
         origin("center"),
         "move",
@@ -347,14 +347,7 @@ scene("main", (args = {}) => {
 
   function pawnMoveList(startPos, color) {
     /*
-      move {
-        pos: pos(x,y),
-        capture: false,
-        enpas: false,
-        promote: false,
-      }
-
-      moving as a pawn:
+      pawn:
       w: a2 -> a3 or a4 (on first move) // down in the y direction
       b: a7 -> a6 or a5 // up in the y direction
 
@@ -375,46 +368,24 @@ scene("main", (args = {}) => {
       dir *= -1;
     }
 
-    if (y+(1*dir) === 7 || y+(1*dir) === 0) { //TODO PROMOTE
-
-    }
-
-    if (board[y+(1*dir)][x].piece === null) {
-      m = indexToWorldPos(x, (y+(1*dir)), false);
-      moveList.push({
-        "pos": m,
-        "capture": false,
-        "enpas": false,
-        "promote": false,
-      });
-      if ((y === 6 && color === "w") || (y === 1 && color === "b")) { // start move
-        if (board[y+(2*dir)][x].piece === null) {
-          m = indexToWorldPos(x, (y+(2*dir)), false);
-          moveList.push({
-            "pos": m,
-            "capture": false,
-            "enpas": false,
-            "promote": false,
-          });
-        }
-      }
-    }
-
-    // promotion
-    if ((y === 6 && color === "b") || (y === 1 && color === "w")) {
-      promote = true;
-    }
-
-    // TODO: Enpasant
     if ((y+(1*dir)) >= minIndex && (y+(1*dir)) <= maxIndex) { 
+
+      // regular move
+      if (board[y+(1*dir)][x].piece === null) {
+        m = indexToWorldPos(x, (y+(1*dir)), false);
+        moveList.push({
+          "pos": m,
+          "capture": false,
+        });
+      }
+
+      // capture
       if (x+1 >= minIndex && x+1 <= maxIndex) {
         m = indexToWorldPos(x+1, (y+(1*dir)), false);
         if (isMoveCapture(m, color)) {
           moveList.push({
             "pos": m,
             "capture": true,
-            "enpas": false,
-            "promote": false,
           });
         }
       }
@@ -424,10 +395,19 @@ scene("main", (args = {}) => {
           moveList.push({
             "pos": m,
             "capture": true,
-            "enpas": false,
-            "promote": false,
           });
         }
+      }
+    }
+
+    // first move
+    if ((y === 6 && color === "w") || (y === 1 && color === "b")) {
+      if (board[y+(2*dir)][x].piece === null) {
+        m = indexToWorldPos(x, (y+(2*dir)), false);
+        moveList.push({
+          "pos": m,
+          "capture": false,
+        });
       }
     }
 
@@ -436,11 +416,6 @@ scene("main", (args = {}) => {
 
   function knightMoveList(startPos, color) {
     /*
-       move {
-        pos: pos(x,y),
-        capture: false,
-      }
-
       moving as a knight:
       all knight moves:
       y-2, x-1
@@ -549,7 +524,7 @@ scene("main", (args = {}) => {
     }
 
     //promote pawn
-    if (p.is("wpawn") || p.is("bpawn")) {
+    if ((p.is("wpawn") || p.is("bpawn")) && move) {
       
     }
 
@@ -615,7 +590,7 @@ scene("main", (args = {}) => {
       outline(1),
       layer("board"),
       origin("top"),
-      area({}),
+      area(),
       "promote",
     ]);
     promoteHighlight = add([
@@ -629,7 +604,7 @@ scene("main", (args = {}) => {
     add([
       sprite("wqueen"),
       indexToWorldPos(9,0,true),
-      area({}),
+      area(),
       scale(1),
       origin("top"),
       layer("peice"),
@@ -640,7 +615,7 @@ scene("main", (args = {}) => {
     add([
       sprite("wknight"),
       indexToWorldPos(9,1,true),
-      area({}),
+      area(),
       scale(1),
       origin("top"),
       layer("peice"),
@@ -651,7 +626,7 @@ scene("main", (args = {}) => {
     add([
       sprite("wrook"),
       indexToWorldPos(9,2,true),
-      area({}),
+      area(),
       scale(1),
       origin("top"),
       layer("peice"),
@@ -662,7 +637,7 @@ scene("main", (args = {}) => {
     add([
       sprite("wbishop"),
       indexToWorldPos(9,3,true),
-      area({}),
+      area(),
       scale(1),
       origin("top"),
       layer("peice"),
