@@ -290,19 +290,19 @@ scene("main", (args = {}) => {
         moveList = pawnMoveList(p.pos, pieceName[0]);
         break;
       case "wrook": case "brook": 
-
+        moveList = rookMoveList(p.pos, pieceName[0]);
         break;
       case "wknight": case "bknight":
         moveList = knightMoveList(p.pos, pieceName[0]);
         break;
       case "wbishop": case "bbishop": 
-        
+        moveList = bishopknightMoveList(p.pos, pieceName[0]);        
         break;
       case "wqueen": case "bqueen":
-        
+        moveList = queenMoveList(p.pos, pieceName[0]);            
         break;
       case "wking": case "bking":
-        
+        moveList = kingMoveList(p.pos, pieceName[0]);            
         break;
     }
 
