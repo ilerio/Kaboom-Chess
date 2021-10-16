@@ -1,6 +1,6 @@
 import kaboom from "https://unpkg.com/kaboom@next/dist/kaboom.mjs";
 import {dlog, clog} from "./helpers.js"
-import {loadAssets} from "./setup.js"
+import {loadAssets} from "./load.js"
 //import {} from "./board.js"
 //import {} from "./peices.js"
 
