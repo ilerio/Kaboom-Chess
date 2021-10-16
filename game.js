@@ -1,5 +1,5 @@
 import kaboom from "https://unpkg.com/kaboom@next/dist/kaboom.mjs";
-import {dlog, clog} from "./defs.js" // TODO: put all function definitions in here
+import {dlog, clog} from "./helpers.js" // TODO: put all function definitions in here
 
 kaboom({
   global: true,
