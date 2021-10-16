@@ -46,6 +46,7 @@ scene("main", (args = {}) => {
   let curTurn = "white";
   let promoteHighlight = null;
   let promotePeice = "queen";
+  let enPasant = {};
 
   let fiftyMoveRule = 0
 
@@ -221,22 +222,26 @@ scene("main", (args = {}) => {
         board[i][j].pos = pos;
 
         if (board[i][j].piece !== null) {
-          const p = add([
-            sprite(board[i][j].piece),
-            pos,
-            area(),
-            scale(1),
-            origin("center"),
-            layer("peice"),
-            "peice",
-            board[i][j].piece,
-            board[i][j].piece[0] === "w" ? "white" : "black",
-          ]);
-
+          const p = drawPeice(indexToWorldPos(j,i,false), board[i][j].piece);
           board[i][j].piece = p;
         }
       }
     }
+  }
+
+  function drawPeice(pos, pieceName) {
+    const p = add([
+      sprite(pieceName),
+      pos,
+      area(),
+      scale(1),
+      origin("center"),
+      layer("peice"),
+      "peice",
+      pieceName,
+      pieceName[0] === "w" ? "white" : "black",
+    ]);
+    return p;
   }
 
   function objectAtid(id) {
@@ -515,7 +520,9 @@ scene("main", (args = {}) => {
     let startYIndex = worldPosToIndex(p.pos, false).y;
     let destXIndex = worldPosToIndex(dest, false).x;
     let destYIndex = worldPosToIndex(dest, false).y;
-    let name = getPeiceName(p);
+    let peiceName = getPeiceName(p);
+
+    let promoted = null
 
     //capture
     let destPeice = board[destYIndex][destXIndex].piece;
@@ -523,9 +530,16 @@ scene("main", (args = {}) => {
       destroy(destPeice);
     }
 
-    //promote pawn
-    if ((p.is("wpawn") || p.is("bpawn")) && move) {
-      
+    //promote pawn | TODO: enPasant
+    if ((p.is("wpawn") || p.is("bpawn"))) {
+      if (destYIndex === 7 || destYIndex === 0) {
+        let temp = p;
+        selected = null;
+        destroyAll("highlight");
+        destroyAll("move");
+        p = drawPeice(indexToWorldPos(destXIndex,destYIndex), peiceName[0]+promotePeice);
+        destroy(temp);
+      }
     }
 
     p.pos = dest;
@@ -534,7 +548,7 @@ scene("main", (args = {}) => {
     board[startYIndex][startXIndex].piece = null;
 
     // advance turn
-    if (name[0] === "w") {
+    if (peiceName[0] === "w") {
       curTurn = "black";
     } else {
       curTurn = "white";
@@ -648,7 +662,7 @@ scene("main", (args = {}) => {
   }
 
   function init() {
-    loadFEN(initFEN);
+    loadFEN("rnbqkbnr/PPPPpppp/8/p2pP2P/p2pP2P/8/PPPPpppp/RNBQKBNR w KQkq - 0 1");
     drawBoard();
     drawPeices();
     drawPromote();
@@ -660,7 +674,7 @@ scene("main", (args = {}) => {
     }
   });
 
-  clicks("attack", (m) => { // TODO: capture
+  clicks("attack", (m) => {
     if (selected != null) {
       movePeice(selected, m.pos);
     }
@@ -680,6 +694,12 @@ scene("main", (args = {}) => {
     }
   });
 
+  hovers("promote-peice", (t) => {
+    t.scale = vec2(1.1);
+  }, (t) => {
+    t.scale = vec2(1);
+  });
+
   hovers("tile", (t) => {
     if (curHover != t) {
       hoverHight.pos = t.pos;
@@ -694,14 +714,15 @@ scene("main", (args = {}) => {
     curHover = t;
   });
 
-  hovers("promote-peice", (t) => {
-    t.scale = vec2(1.1);
-  }, (t) => {
-    t.scale = vec2(1);
-  });
+  /*clicks("tile", (p) => {
+    destroyAll("highlight");
+    destroyAll("move");
+  });*/
 
   clicks("peice", (p) => {
-    if (selected === null && p.is(curTurn)) {
+    destroyAll("highlight");
+    destroyAll("move");
+    if ((selected === null || selected != p) && p.is(curTurn)) {
       selected = p;
       add([
         sprite("highlight"),
@@ -713,9 +734,11 @@ scene("main", (args = {}) => {
       generateMoveList(p);
     } else if (selected === p) {
       selected = null;
-      destroyAll("highlight");
-      destroyAll("move");
     }
+  }); 
+
+  action(() => { // action can also be used to track checks and checkmate.
+    //
   });
 
   init();
