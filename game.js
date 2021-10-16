@@ -43,7 +43,9 @@ scene("main", (args = {}) => {
 
   let curHover = null;
   let selected = null;
-  let curTurn = "white"
+  let curTurn = "white";
+  let promoteHighlight = null;
+  let promotePeice = "queen";
 
   let fiftyMoveRule = 0
 
@@ -131,18 +133,18 @@ scene("main", (args = {}) => {
   }
 
   function loadFEN(fen) {
-    let fenArr = []
-    let fileIndex = 0
-    let rankIndex = 0
-    let piecePos = []
+    let fenArr = [];
+    let fileIndex = 0;
+    let rankIndex = 0;
+    let piecePos = [];
 
-    fenArr = fen.split(" ") //TODO: implement rest of FEN
+    fenArr = fen.split(" "); //TODO: implement rest of FEN
     //console.log("fenArr[0]: ", fenArr[0])
 
     piecePos = fenArr[0].split("")
     for (let i = 0; i < piecePos.length; i++) {
-      let cur = piecePos[i]
-      let temp = 0
+      let cur = piecePos[i];
+      let temp = 0;
       if (isNumeric(cur)) {
         for (let j = 0; j < cur; j++) {
           board[fileIndex][rankIndex].id = rankLetterMap[rankIndex]+fileLetterMap[fileIndex];
@@ -164,34 +166,34 @@ scene("main", (args = {}) => {
     for(let i = 0; i < 8; i++) {
       for (let j = 0; j < 8; j++) {
         // TODO: use indexToWorldPos()
-        let x = (size*j) + offsetX
-        let y = (size*i) + offsetY
+        let x = (size*j) + offsetX;
+        let y = (size*i) + offsetY;
 
         //labeling
         if (j === 0) {
           add ([
             text(fileLetterMap[i], {size: 30}),
-            pos(x - 25,y + 20)
+            pos(x - 25,y + 20),
           ]);
 
           //////////DEBUG TODO: DELETE
           add ([
             text(i.toString(), {size: 30}),
             pos(x - 50,y + 20),
-            color(255, 0, 0)
+            color(255, 0, 0),
           ]);
           //////////DEBUG TODO: DELETE
         }
         if (i === 7) {
           add ([
             text(rankLetterMap[j], {size: 30}),
-            pos(x + 20,y + 60)
+            pos(x + 20,y + 60),
           ]);
           //////////DEBUG TODO: DELETE
           add ([
             text(j.toString(), {size: 30}),
             pos(x + 20,y + 90),
-            color(255, 0, 0)
+            color(255, 0, 0),
           ]);
           //////////DEBUG TODO: DELETE
         }
@@ -202,10 +204,10 @@ scene("main", (args = {}) => {
           area({}),
           layer("board"),
           (j+i)%2 === 0 ? colorWhite : colorBlack,
-          "tile"
+          "tile",
         ]);
 
-        tile._id = board[i][j].id
+        tile._id = board[i][j].id;
         board[i][j].tile = tile;
       }
     }
@@ -231,7 +233,7 @@ scene("main", (args = {}) => {
             board[i][j].piece[0] === "w" ? "white" : "black",
           ]);
 
-          board[i][j].piece = p
+          board[i][j].piece = p;
         }
       }
     }
@@ -377,7 +379,6 @@ scene("main", (args = {}) => {
 
     }
 
-    // do off board check // TODO
     if (board[y+(1*dir)][x].piece === null) {
       m = indexToWorldPos(x, (y+(1*dir)), false);
       moveList.push({
@@ -399,7 +400,12 @@ scene("main", (args = {}) => {
       }
     }
 
-    // TODO: Enpasant | Promotion
+    // promotion
+    if ((y === 6 && color === "b") || (y === 1 && color === "w")) {
+      promote = true;
+    }
+
+    // TODO: Enpasant
     if ((y+(1*dir)) >= minIndex && (y+(1*dir)) <= maxIndex) { 
       if (x+1 >= minIndex && x+1 <= maxIndex) {
         m = indexToWorldPos(x+1, (y+(1*dir)), false);
@@ -470,20 +476,20 @@ scene("main", (args = {}) => {
         y1 = y+one;
         x1 = x+one;
         if (y2 >= minIndex && y2 <= maxIndex && x1 >= minIndex && x1 <= maxIndex) {
-          m = indexToWorldPos(x1, y2);
+          m = indexToWorldPos(x1, y2, false);
           if (!moveToPosHasFriendly(m, color)) {
             moveList.push({
               "pos": m,
-              "capture": isMoveCapture(startPos, m),
+              "capture": isMoveCapture(m, color),
             });
           }
         }
         if (x2 >= minIndex && x2 <= maxIndex && y1 >= minIndex && y1 <= maxIndex) {
-          m = indexToWorldPos(x2, y1);
+          m = indexToWorldPos(x2, y1, false);
           if (!moveToPosHasFriendly(m, color)) {
             moveList.push({
               "pos": m,
-              "capture": isMoveCapture(startPos, m),
+              "capture": isMoveCapture(m, color),
             });
           }
         }
@@ -512,20 +518,20 @@ scene("main", (args = {}) => {
     let y = 0;
 
     if (tile) {
-      x = (pos.x - (offsetX)) / size
-      y = (pos.y - (offsetY)) / size
+      x = (pos.x - (offsetX)) / size;
+      y = (pos.y - (offsetY)) / size;
     } else {
-      x = (pos.x - (offsetX + peicePosOffset)) / size
-      y = (pos.y - (offsetY + peicePosOffset)) / size
+      x = (pos.x - (offsetX + peicePosOffset)) / size;
+      y = (pos.y - (offsetY + peicePosOffset)) / size;
     }
 
     return {"x": x, "y": y};
   }
 
   function tilePosToPeicePos(pos) {
-    let x = worldPosToIndex(pos, true).x
-    let y = worldPosToIndex(pos, true).y
-    return indexToWorldPos(x,y,false).pos
+    let x = worldPosToIndex(pos, true).x;
+    let y = worldPosToIndex(pos, true).y;
+    return indexToWorldPos(x,y,false).pos;
   }
 
   function movePeice(p, dest) {
@@ -540,6 +546,11 @@ scene("main", (args = {}) => {
     let destPeice = board[destYIndex][destXIndex].piece;
     if (destPeice != null) {
       destroy(destPeice);
+    }
+
+    //promote pawn
+    if (p.is("wpawn") || p.is("bpawn")) {
+      
     }
 
     p.pos = dest;
@@ -558,10 +569,10 @@ scene("main", (args = {}) => {
   }
 
   function isMoveCapture(move, color) {
-    let pos = move.pos    
+    let pos = move.pos;
     let x = worldPosToIndex(pos, false).x;
     let y = worldPosToIndex(pos, false).y;
-    let p = board[y][x].piece
+    let p = board[y][x].piece;
 
     if (p === null) return false;
 
@@ -575,10 +586,10 @@ scene("main", (args = {}) => {
   }
 
   function moveToPosHasFriendly(move, color) {
-    let pos = move.pos    
+    let pos = move.pos;
     let x = worldPosToIndex(pos, false).x;
     let y = worldPosToIndex(pos, false).y;
-    let p = board[y][x].piece
+    let p = board[y][x].piece;
 
     if (p === null) return false;
 
@@ -591,10 +602,81 @@ scene("main", (args = {}) => {
     return false;
   }
 
+  function drawPromote() {
+    add ([
+      text("promote", {size: 20}),
+      indexToWorldPos(9,0,true),
+      layer("ui"),
+      origin("bot"),
+    ]);
+    add([
+      rect(size, (size*4)),
+      indexToWorldPos(9,0,true),
+      outline(1),
+      layer("board"),
+      origin("top"),
+      area({}),
+      "promote",
+    ]);
+    promoteHighlight = add([
+      sprite("highlight"),
+      indexToWorldPos(9,0,true),
+      layer("board"),
+      origin("top"),
+      "promote",
+      "promote-border",
+    ]);
+    add([
+      sprite("wqueen"),
+      indexToWorldPos(9,0,true),
+      area({}),
+      scale(1),
+      origin("top"),
+      layer("peice"),
+      "promote",
+      "promote-peice",
+      "promote-queen",
+    ]);
+    add([
+      sprite("wknight"),
+      indexToWorldPos(9,1,true),
+      area({}),
+      scale(1),
+      origin("top"),
+      layer("peice"),
+      "promote",
+      "promote-peice",
+      "promote-knight",
+    ]);
+    add([
+      sprite("wrook"),
+      indexToWorldPos(9,2,true),
+      area({}),
+      scale(1),
+      origin("top"),
+      layer("peice"),
+      "promote",
+      "promote-peice",
+      "promote-rook",
+    ]);
+    add([
+      sprite("wbishop"),
+      indexToWorldPos(9,3,true),
+      area({}),
+      scale(1),
+      origin("top"),
+      layer("peice"),
+      "promote",
+      "promote-peice",
+      "promote-bishop",
+    ]);
+  }
+
   function init() {
     loadFEN(initFEN);
     drawBoard();
     drawPeices();
+    drawPromote();
   }
 
   clicks("move", (m) => {
@@ -609,16 +691,19 @@ scene("main", (args = {}) => {
     }
   });
 
-  /*clicks("tile", (t) => {
-    add([
-      sprite("attack"),
-      pos(tilePosToPeicePos(t.pos)),
-      area({}),
-      layer("ui"),
-      origin("center"),
-      "move",
-    ]);
-  });*/
+  clicks("promote-peice", (pp) => {
+    promoteHighlight.pos = pp.pos;
+
+    if (pp.is("promote-queen")) {
+      promotePeice = "queen";
+    } else if (pp.is("promote-knight")) {
+      promotePeice = "knight";
+    } else if (pp.is("promote-rook")) {
+      promotePeice = "rook";
+    } else if (pp.is("promote-bishop")) {
+      promotePeice = "bishop";
+    }
+  });
 
   hovers("tile", (t) => {
     if (curHover != t) {
@@ -632,6 +717,12 @@ scene("main", (args = {}) => {
       }
     }
     curHover = t;
+  });
+
+  hovers("promote-peice", (t) => {
+    t.scale = vec2(1.1);
+  }, (t) => {
+    t.scale = vec2(1);
   });
 
   clicks("peice", (p) => {
