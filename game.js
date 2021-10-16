@@ -46,7 +46,13 @@ scene("main", (args = {}) => {
   let curTurn = "white";
   let promoteHighlight = null;
   let promotePeice = "queen";
-  let enPasant = {};
+  /*
+    {
+      peice: p,
+      enpasPos: pos,
+    }
+  */
+  let enPasant = null;
 
   let fiftyMoveRule = 0
 
@@ -289,18 +295,6 @@ scene("main", (args = {}) => {
         pos: pos(x,y),
         capture: false,
       }
-      
-      //all:
-      move.end = pos
-      move.capture = true
-      
-      //pawns:
-      move.enpas = true
-      move.promote = true
-      move.start = pos
-
-      //king:
-      move.castling = true
     */
 
     let moveList = [];
@@ -478,6 +472,14 @@ scene("main", (args = {}) => {
 
     return moveList;
   }
+
+  function queenMoveList(startPos, color) {}
+
+  function kingMoveList(startPos, color) {}
+
+  function bishopMoveList(startPos, color) {}
+
+  function rookMoveList(startPos, color) {}
 
   function indexToWorldPos(destX, destY, tile) {
     let x = 0;
