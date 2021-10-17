@@ -531,12 +531,6 @@ scene("main", (args = {}) => {
     return {"x": x, "y": y};
   }
 
-  function tilePosToPiecePos(pos) {
-    let x = worldPosToIndex(pos, true).x;
-    let y = worldPosToIndex(pos, true).y;
-    return indexToWorldPos(x,y,false).pos;
-  }
-
   function movePiece(p, dest) {
     let startXIndex = worldPosToIndex(p.pos, false).x;
     let startYIndex = worldPosToIndex(p.pos, false).y;
