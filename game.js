@@ -1,4 +1,5 @@
-import kaboom from "https://unpkg.com/kaboom@next/dist/kaboom.mjs";
+//import kaboom from "https://unpkg.com/kaboom@next/dist/kaboom.mjs";
+import kaboom from "https://unpkg.com/kaboom@2000.0.0-beta.24/dist/kaboom.mjs"
 import {dlog, clog} from "./helpers.js"
 import {loadAssets} from "./load.js"
 //import {} from "./board.js"
@@ -32,12 +33,15 @@ scene("main", (args = {}) => {
   let promoteHighlight = null;
   let promotePeice = "queen";
   /*
-    {
-      peice: p,
-      enpasPos: pos,
+    enPasantObj {
+      peiceColor,
+      file,
+      dest,
+      turn, // how many moves it has been since this was set
     }
   */
-  let enPasant = null;
+  let possibleEnPasant = false;
+  let enPasantObj = null;
 
   let fiftyMoveRule = 0
 
@@ -120,7 +124,7 @@ scene("main", (args = {}) => {
   hoverHight.hidden = true
 
   function isNumeric(str) {
-    if (typeof str != "string") return false
+    if (typeof str !== "string") return false
     return !isNaN(str) && !isNaN(parseFloat(str))
   }
 
@@ -381,6 +385,7 @@ scene("main", (args = {}) => {
             "capture": true,
           });
         }
+        possibleEnPasant = true;
       }
     }
 
@@ -502,22 +507,34 @@ scene("main", (args = {}) => {
   }
 
   function movePeice(p, dest) {
-    // handle captures
     let startXIndex = worldPosToIndex(p.pos, false).x;
     let startYIndex = worldPosToIndex(p.pos, false).y;
     let destXIndex = worldPosToIndex(dest, false).x;
     let destYIndex = worldPosToIndex(dest, false).y;
     let peiceName = getPeiceName(p);
-
-    let promoted = null
+    
+    //enPasant
+    if (possibleEnPasant === true && (Math.abs(startYIndex - destYIndex) === 2)) {
+      enPasantObj = {
+        "peiceColor": peiceName[0],
+        "file": destXIndex,
+        "dest": dest, //*
+        "turn": 0,
+      }
+      possibleEnPasant = false;
+    } else {
+      possibleEnPasant = false;
+    }
 
     //capture
     let destPeice = board[destYIndex][destXIndex].piece;
-    if (destPeice != null) {
+    if (destPeice !== null) {
       destroy(destPeice);
     }
 
-    //promote pawn | TODO: enPasant
+    clog(enPasantObj);
+
+    //promote pawn
     if ((p.is("wpawn") || p.is("bpawn"))) {
       if (destYIndex === 7 || destYIndex === 0) {
         let temp = p;
@@ -528,6 +545,17 @@ scene("main", (args = {}) => {
         destroy(temp);
       }
     }
+
+    if (enPasantObj !== null) {
+      enPasantObj.turn++
+      if (enPasantObj.turn > 1) {
+        possibleEnPasant = false;
+        enPasantObj = null;
+      }
+
+    }
+
+    clog(enPasantObj);
 
     p.pos = dest;
 
@@ -649,20 +677,20 @@ scene("main", (args = {}) => {
   }
 
   function init() {
-    loadFEN("rnbqkbnr/PPPPpppp/8/p2pP2P/p2pP2P/8/PPPPpppp/RNBQKBNR w KQkq - 0 1");
+    loadFEN("rnbqkbnr/pppppppp/8/P2P2P1/p2p2p1/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     drawBoard();
     drawPeices();
     drawPromote();
   }
 
   clicks("move", (m) => {
-    if (selected != null) {
+    if (selected !== null) {
       movePeice(selected, m.pos);
     }
   });
 
   clicks("attack", (m) => {
-    if (selected != null) {
+    if (selected !== null) {
       movePeice(selected, m.pos);
     }
   });
@@ -688,11 +716,11 @@ scene("main", (args = {}) => {
   });
 
   hovers("tile", (t) => {
-    if (curHover != t) {
+    if (curHover !== t) {
       hoverHight.pos = t.pos;
       readd(hoverHight);
       let hoverPeice = objectAtid(t._id).piece;
-      if (hoverPeice != null) {
+      if (hoverPeice !== null) {
         hoverHight.hidden = false;
       } else {
         hoverHight.hidden = true;
@@ -709,7 +737,7 @@ scene("main", (args = {}) => {
   clicks("peice", (p) => {
     destroyAll("highlight");
     destroyAll("move");
-    if ((selected === null || selected != p) && p.is(curTurn)) {
+    if ((selected === null || selected !== p) && p.is(curTurn)) {
       selected = p;
       add([
         sprite("highlight"),
@@ -724,8 +752,8 @@ scene("main", (args = {}) => {
     }
   }); 
 
-  action(() => { // action can also be used to track checks and checkmate.
-    //
+  keyPress("f", () => {
+    fullscreen(!fullscreen());
   });
 
   init();
