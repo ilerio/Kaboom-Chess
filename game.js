@@ -3,7 +3,7 @@ import kaboom from "https://unpkg.com/kaboom@2000.0.0-beta.24/dist/kaboom.mjs"
 import {dlog, clog} from "./helpers.js"
 import {loadAssets} from "./load.js"
 //import {} from "./board.js"
-//import {} from "./peices.js"
+//import {} from "./pieces.js"
 
 kaboom({
   global: true,
@@ -13,12 +13,12 @@ kaboom({
 loadAssets();
 
 scene("main", (args = {}) => {
-  layers(["board", "boarder", "peice", "ui"]);
+  layers(["board", "boarder", "piece", "ui"]);
 
   const size = 60;
   const offsetX = ((width()/2) - 240);
   const offsetY = ((height()/2) - 240);
-  const peicePosOffset = 30;
+  const piecePosOffset = 30;
   const colorBlack = color(135,175,85);
   const colorWhite = color(255,255,205);
 
@@ -31,11 +31,12 @@ scene("main", (args = {}) => {
   let selected = null;
   let curTurn = "white";
   let promoteHighlight = null;
-  let promotePeice = "queen";
+  let promotePiece = "queen";
   /*
     enPasantObj {
       color,
-      file,
+      x,
+      y,
       dest,
       turn, // how many moves it has been since this was set
     }
@@ -209,7 +210,7 @@ scene("main", (args = {}) => {
     }
   }
 
-  function drawPeices() {
+  function drawPieces() {
     for(let i = 0; i < 8; i++) {
       for (let j = 0; j < 8; j++) {    
 
@@ -217,22 +218,22 @@ scene("main", (args = {}) => {
         board[i][j].pos = pos;
 
         if (board[i][j].piece !== null) {
-          const p = drawPeice(indexToWorldPos(j,i,false), board[i][j].piece);
+          const p = drawPiece(indexToWorldPos(j,i,false), board[i][j].piece);
           board[i][j].piece = p;
         }
       }
     }
   }
 
-  function drawPeice(pos, pieceName) {
+  function drawPiece(pos, pieceName) {
     const p = add([
       sprite(pieceName),
       pos,
       area(),
       scale(1),
       origin("center"),
-      layer("peice"),
-      "peice",
+      layer("piece"),
+      "piece",
       pieceName,
       pieceName[0] === "w" ? "white" : "black",
     ]);
@@ -245,7 +246,7 @@ scene("main", (args = {}) => {
     return board[y][x];
   }
 
-  function getPeiceName(p) {
+  function getPieceName(p) {
     let name = "";
     if (p.is("bking")) {
       name = "bking";
@@ -271,8 +272,6 @@ scene("main", (args = {}) => {
       name = "wrook";
     } else if (p.is("wqueen")) {
       name = "wqueen";
-    } else {
-      name = "ERROR";
     }
     
     return name;
@@ -287,7 +286,7 @@ scene("main", (args = {}) => {
     */
 
     let moveList = [];
-    let pieceName = getPeiceName(p);
+    let pieceName = getPieceName(p);
 
     switch (pieceName) {
       case "wpawn": case "bpawn": 
@@ -300,7 +299,7 @@ scene("main", (args = {}) => {
         moveList = knightMoveList(p.pos, pieceName[0]);
         break;
       case "wbishop": case "bbishop": 
-        moveList = bishopknightMoveList(p.pos, pieceName[0]);        
+        moveList = bishopMoveList(p.pos, pieceName[0]);        
         break;
       case "wqueen": case "bqueen":
         moveList = queenMoveList(p.pos, pieceName[0]);            
@@ -351,16 +350,20 @@ scene("main", (args = {}) => {
     let m = null;
     let dir = 1;
     let promote = false;
+    let y1 = 0;
 
     if (color === "w") {
-      dir *= -1;
+      // -1 because moving "up" the bord is moving 
+      // in the negative y direction array wise.
+      dir *= -1; 
     }
+    y1 = (y+(1*dir));
 
-    if ((y+(1*dir)) >= minIndex && (y+(1*dir)) <= maxIndex) { 
+    if (y1 >= minIndex && y1 <= maxIndex) { 
 
       // regular move
       if (board[y+(1*dir)][x].piece === null) {
-        m = indexToWorldPos(x, (y+(1*dir)), false);
+        m = indexToWorldPos(x, y1, false);
         moveList.push({
           "pos": m,
           "capture": false,
@@ -369,7 +372,7 @@ scene("main", (args = {}) => {
 
       // capture
       if (x+1 >= minIndex && x+1 <= maxIndex) {
-        m = indexToWorldPos(x+1, (y+(1*dir)), false);
+        m = indexToWorldPos(x+1, y1, false);
         if (isMoveCapture(m, color)) {
           moveList.push({
             "pos": m,
@@ -378,7 +381,7 @@ scene("main", (args = {}) => {
         }
       }
       if (x-1 >= minIndex && x-1 <= maxIndex) {
-        m = indexToWorldPos(x-1, (y+(1*dir)), false);
+        m = indexToWorldPos(x-1, y1, false);
         if (isMoveCapture(m, color)) {
           moveList.push({
             "pos": m,
@@ -389,8 +392,22 @@ scene("main", (args = {}) => {
       }
 
       //enPasant capture
-      if (enPasantObj !== null && enPasantObj.color !== color) {
-        clog(enPasantObj.dest);
+      if (enPasantObj !== null) {
+        if (enPasantObj.color !== color && y1 === enPasantObj.y) {
+          if (x-1 === enPasantObj.x) {
+            m = indexToWorldPos(x-1, y1, false);
+            moveList.push({
+              "pos": m,
+              "capture": true,
+            });
+          } else if(x+1 === enPasantObj.x) {
+            m = indexToWorldPos(x+1, y1, false);
+            moveList.push({
+              "pos": m,
+              "capture": true,
+            });
+          }
+        }
       }
     }
 
@@ -468,13 +485,13 @@ scene("main", (args = {}) => {
     return moveList;
   }
 
-  function queenMoveList(startPos, color) {}
+  function queenMoveList(startPos, color) {return []}
 
-  function kingMoveList(startPos, color) {}
+  function kingMoveList(startPos, color) {return []}
 
-  function bishopMoveList(startPos, color) {}
+  function bishopMoveList(startPos, color) {return []}
 
-  function rookMoveList(startPos, color) {}
+  function rookMoveList(startPos, color) {return []}
 
   function indexToWorldPos(destX, destY, tile) {
     let x = 0;
@@ -484,8 +501,8 @@ scene("main", (args = {}) => {
       x = (size*destX) + offsetX;
       y = (size*destY) + offsetY;
     } else {
-      x = (size*destX) + offsetX + peicePosOffset;
-      y = (size*destY) + offsetY + peicePosOffset;
+      x = (size*destX) + offsetX + piecePosOffset;
+      y = (size*destY) + offsetY + piecePosOffset;
     }
     return pos(x,y);
   }
@@ -498,31 +515,38 @@ scene("main", (args = {}) => {
       x = (pos.x - (offsetX)) / size;
       y = (pos.y - (offsetY)) / size;
     } else {
-      x = (pos.x - (offsetX + peicePosOffset)) / size;
-      y = (pos.y - (offsetY + peicePosOffset)) / size;
+      x = (pos.x - (offsetX + piecePosOffset)) / size;
+      y = (pos.y - (offsetY + piecePosOffset)) / size;
     }
 
     return {"x": x, "y": y};
   }
 
-  function tilePosToPeicePos(pos) {
+  function tilePosToPiecePos(pos) {
     let x = worldPosToIndex(pos, true).x;
     let y = worldPosToIndex(pos, true).y;
     return indexToWorldPos(x,y,false).pos;
   }
 
-  function movePeice(p, dest) {
+  function movePiece(p, dest) {
     let startXIndex = worldPosToIndex(p.pos, false).x;
     let startYIndex = worldPosToIndex(p.pos, false).y;
     let destXIndex = worldPosToIndex(dest, false).x;
     let destYIndex = worldPosToIndex(dest, false).y;
-    let peiceName = getPeiceName(p);
+    let pieceName = getPieceName(p);
+    let dir = 1;
+
+    if (getPieceName(p)[0] === "b") {
+      dir *= -1;
+    }
     
     //enPasant
     if (possibleEnPasant === true && (Math.abs(startYIndex - destYIndex) === 2)) {
       enPasantObj = {
-        "color": peiceName[0],
-        "file": destXIndex,
+        "piece": p,
+        "color": pieceName[0],
+        "x": destXIndex,
+        "y": (destYIndex+(1*(dir*dir))),
         "dest": dest, //*
         "turn": 0,
       }
@@ -532,9 +556,9 @@ scene("main", (args = {}) => {
     }
 
     //capture
-    let destPeice = board[destYIndex][destXIndex].piece;
-    if (destPeice !== null) {
-      destroy(destPeice);
+    let destPiece = board[destYIndex][destXIndex].piece;
+    if (destPiece !== null) {
+      destroy(destPiece);
     }
 
     //promote pawn
@@ -544,8 +568,20 @@ scene("main", (args = {}) => {
         selected = null;
         destroyAll("highlight");
         destroyAll("move");
-        p = drawPeice(indexToWorldPos(destXIndex,destYIndex), peiceName[0]+promotePeice);
+        p = drawPiece(indexToWorldPos(destXIndex,destYIndex), pieceName[0]+promotePiece);
         destroy(temp);
+      }
+
+      //enPasant capture
+      if(enPasantObj !== null) {
+        if (enPasantObj.x === destXIndex && enPasantObj.y === destYIndex) {
+          let x = destXIndex;
+          let y = destYIndex+(1*(dir));
+          let p = board[y][x];
+          clog("x: "+ x);
+          clog("y: "+ y);
+          clog(p);
+        }
       }
     }
 
@@ -563,7 +599,7 @@ scene("main", (args = {}) => {
     board[startYIndex][startXIndex].piece = null;
 
     // advance turn
-    if (peiceName[0] === "w") {
+    if (pieceName[0] === "w") {
       curTurn = "black";
     } else {
       curTurn = "white";
@@ -581,7 +617,7 @@ scene("main", (args = {}) => {
 
     if (p === null) return false;
 
-    let name = getPeiceName(p);
+    let name = getPieceName(p);
 
     if (name[0] === color) {
       return false;
@@ -598,7 +634,7 @@ scene("main", (args = {}) => {
 
     if (p === null) return false;
 
-    let name = getPeiceName(p);
+    let name = getPieceName(p);
 
     if (name[0] === color) {
       return true;
@@ -629,9 +665,9 @@ scene("main", (args = {}) => {
       area(),
       scale(1),
       origin("top"),
-      layer("peice"),
+      layer("piece"),
       "promote",
-      "promote-peice",
+      "promote-piece",
       "promote-queen",
     ]);
     add([
@@ -640,9 +676,9 @@ scene("main", (args = {}) => {
       area(),
       scale(1),
       origin("top"),
-      layer("peice"),
+      layer("piece"),
       "promote",
-      "promote-peice",
+      "promote-piece",
       "promote-knight",
     ]);
     add([
@@ -651,9 +687,9 @@ scene("main", (args = {}) => {
       area(),
       scale(1),
       origin("top"),
-      layer("peice"),
+      layer("piece"),
       "promote",
-      "promote-peice",
+      "promote-piece",
       "promote-rook",
     ]);
     add([
@@ -662,9 +698,9 @@ scene("main", (args = {}) => {
       area(),
       scale(1),
       origin("top"),
-      layer("peice"),
+      layer("piece"),
       "promote",
-      "promote-peice",
+      "promote-piece",
       "promote-bishop",
     ]);
     if (promoteHighlight !== null) {
@@ -690,39 +726,39 @@ scene("main", (args = {}) => {
   }
 
   function init() {
-    loadFEN("rnbqkbnr/pppppppp/8/P2P2P1/p2p2p1/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    loadFEN("rnbqkbnr/pppppppp/8/1P1PP1P1/1p1pp1p1/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     drawBoard();
-    drawPeices();
+    drawPieces();
     drawPromote();
   }
 
   clicks("move", (m) => {
     if (selected !== null) {
-      movePeice(selected, m.pos);
+      movePiece(selected, m.pos);
     }
   });
 
   clicks("attack", (m) => {
     if (selected !== null) {
-      movePeice(selected, m.pos);
+      movePiece(selected, m.pos);
     }
   });
 
-  clicks("promote-peice", (pp) => {
+  clicks("promote-piece", (pp) => {
     promoteHighlight.pos = pp.pos;
 
     if (pp.is("promote-queen")) {
-      promotePeice = "queen";
+      promotePiece = "queen";
     } else if (pp.is("promote-knight")) {
-      promotePeice = "knight";
+      promotePiece = "knight";
     } else if (pp.is("promote-rook")) {
-      promotePeice = "rook";
+      promotePiece = "rook";
     } else if (pp.is("promote-bishop")) {
-      promotePeice = "bishop";
+      promotePiece = "bishop";
     }
   });
 
-  hovers("promote-peice", (t) => {
+  hovers("promote-piece", (t) => {
     t.scale = vec2(1.1);
   }, (t) => {
     t.scale = vec2(1);
@@ -732,8 +768,8 @@ scene("main", (args = {}) => {
     if (curHover !== t) {
       hoverHight.pos = t.pos;
       readd(hoverHight);
-      let hoverPeice = objectAtid(t._id).piece;
-      if (hoverPeice !== null) {
+      let hoverPiece = objectAtid(t._id).piece;
+      if (hoverPiece !== null) {
         hoverHight.hidden = false;
       } else {
         hoverHight.hidden = true;
@@ -742,12 +778,7 @@ scene("main", (args = {}) => {
     curHover = t;
   });
 
-  /*clicks("tile", (p) => {
-    destroyAll("highlight");
-    destroyAll("move");
-  });*/
-
-  clicks("peice", (p) => {
+  clicks("piece", (p) => {
     destroyAll("highlight");
     destroyAll("move");
     if ((selected === null || selected !== p) && p.is(curTurn)) {
