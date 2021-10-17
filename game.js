@@ -379,7 +379,6 @@ scene("main", (args = {}) => {
             "capture": true,
           });
         }
-        possibleEnPasant = true;
       }
       if (x-1 >= minIndex && x-1 <= maxIndex) {
         m = indexToWorldPos(x-1, y1, false);
@@ -389,19 +388,10 @@ scene("main", (args = {}) => {
             "capture": true,
           });
         }
-        possibleEnPasant = true;
       }
 
       //enPasant capture
-      clog(enPasantObj);
-      clog("possibleEnPasant: "+possibleEnPasant)
       if (enPasantObj !== null) {
-        clog("pieceName: "+getPieceName(enPasantObj.piece));
-        clog("enPasantObj.x: "+enPasantObj.x);
-        clog("enPasantObj.y: "+enPasantObj.y);
-        clog("y: "+y);
-        clog("x+1: "+(x+1));
-        clog("x-1: "+(x-1));
         if (enPasantObj.color !== color && y1 === enPasantObj.y) {
           if (x-1 === enPasantObj.x) {
             m = indexToWorldPos(x-1, y1, false);
@@ -428,6 +418,7 @@ scene("main", (args = {}) => {
           "pos": m,
           "capture": false,
         });
+        possibleEnPasant = true;
       }
     }
 
@@ -494,13 +485,97 @@ scene("main", (args = {}) => {
     return moveList;
   }
 
-  function queenMoveList(startPos, color) {return []}
+  function queenMoveList(startPos, color) {
+    let moveList = [];
+    let diag = [];
+    let lateral = [];
+
+    diag = bishopMoveList(startPos, color);
+    lateral = rookMoveList(startPos, color);
+
+    moveList = diag.concat(lateral)
+
+    return moveList;
+  }
 
   function kingMoveList(startPos, color) {return []}
 
-  function bishopMoveList(startPos, color) {return []}
+  function bishopMoveList(startPos, color) {
+    let moveList = [];
+    let upRight = [];
+    let upLeft = [];
+    let downRight = [];
+    let downLeft = [];
+    let x = worldPosToIndex(startPos, false).x;
+    let y = worldPosToIndex(startPos, false).y;
 
-  function rookMoveList(startPos, color) {return []}
+    upRight = slidingMoves(x,y,1,1,color);
+    downLeft = slidingMoves(x,y,-1,-1,color);
+    upLeft = slidingMoves(x,y,-1,1,color);
+    downRight = slidingMoves(x,y,1,-1,color);
+
+    moveList = upRight.concat(downLeft.concat(upLeft.concat(downRight)));
+
+    return moveList;
+  }
+
+  function rookMoveList(startPos, color) {
+    let moveList = [];
+    let up = [];
+    let left = [];
+    let right = [];
+    let down = [];
+    let x = worldPosToIndex(startPos, false).x;
+    let y = worldPosToIndex(startPos, false).y;
+
+    up = slidingMoves(x,y,0,1,color);
+    left = slidingMoves(x,y,-1,0,color);
+    right = slidingMoves(x,y,1,0,color);
+    down = slidingMoves(x,y,0,-1,color);
+
+    moveList = up.concat(left.concat(right.concat(down)));
+
+    return moveList;
+  }
+
+  function slidingMoves(startX, startY, dirX, dirY, color) {
+    let moveList = [];
+    let xi = 0;
+    let yi = 0;
+    let m = null;
+
+    for (let i = 1; i < maxIndex; i++) {
+      xi = startX + (i*dirX);
+      yi = startY + (i*dirY);
+
+      if (xi > maxIndex || xi < minIndex) break;
+      if (yi > maxIndex || yi < minIndex) break;
+
+      m = indexToWorldPos(xi, yi);
+      if (!moveToPosOccupied(m, color)) {
+        moveList.push({
+          "pos": m,
+          "capture": false,
+        });
+      } else {
+        if (!moveToPosHasFriendly(m, color)) {
+          moveList.push({
+            "pos": m,
+            "capture": true,
+          });
+        } else {
+          if (!moveToPosHasFriendly(m, color)) {
+            moveList.push({
+              "pos": m,
+              "capture": false,
+            });
+          }
+        }
+        break;
+      }
+    }
+    return moveList;
+  }
 
   function indexToWorldPos(destX, destY, tile) {
     let x = 0;
@@ -646,6 +721,10 @@ scene("main", (args = {}) => {
     return false;
   }
 
+  function moveToPosOccupied(move, color) {
+    return isMoveCapture(move, color) || moveToPosHasFriendly(move, color);
+  }
+
   function drawPromote() {
     add ([
       text("promote", {size: 20}),
@@ -729,7 +808,7 @@ scene("main", (args = {}) => {
   }
 
   function init() {
-    loadFEN("rnbqkbnr/pppppppp/8/1P1PP1P1/1p1pp1p1/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    loadFEN("rnbqkbnr/pppppppp/8/2k5/4K3/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
     drawBoard();
     drawPieces();
     drawPromote();
