@@ -34,7 +34,7 @@ scene("main", (args = {}) => {
   let promotePeice = "queen";
   /*
     enPasantObj {
-      peiceColor,
+      color,
       file,
       dest,
       turn, // how many moves it has been since this was set
@@ -387,6 +387,11 @@ scene("main", (args = {}) => {
         }
         possibleEnPasant = true;
       }
+
+      //enPasant capture
+      if (enPasantObj !== null && enPasantObj.color !== color) {
+        clog(enPasantObj.dest);
+      }
     }
 
     // first move
@@ -516,7 +521,7 @@ scene("main", (args = {}) => {
     //enPasant
     if (possibleEnPasant === true && (Math.abs(startYIndex - destYIndex) === 2)) {
       enPasantObj = {
-        "peiceColor": peiceName[0],
+        "color": peiceName[0],
         "file": destXIndex,
         "dest": dest, //*
         "turn": 0,
@@ -531,8 +536,6 @@ scene("main", (args = {}) => {
     if (destPeice !== null) {
       destroy(destPeice);
     }
-
-    clog(enPasantObj);
 
     //promote pawn
     if ((p.is("wpawn") || p.is("bpawn"))) {
@@ -552,10 +555,7 @@ scene("main", (args = {}) => {
         possibleEnPasant = false;
         enPasantObj = null;
       }
-
     }
-
-    clog(enPasantObj);
 
     p.pos = dest;
 
@@ -568,6 +568,7 @@ scene("main", (args = {}) => {
     } else {
       curTurn = "white";
     }
+    drawPromote();
 
     // TODO: 50 move rule 
   }
@@ -622,16 +623,8 @@ scene("main", (args = {}) => {
       area(),
       "promote",
     ]);
-    promoteHighlight = add([
-      sprite("highlight"),
-      indexToWorldPos(9,0,true),
-      layer("board"),
-      origin("top"),
-      "promote",
-      "promote-border",
-    ]);
     add([
-      sprite("wqueen"),
+      sprite(curTurn[0]+"queen"),
       indexToWorldPos(9,0,true),
       area(),
       scale(1),
@@ -642,7 +635,7 @@ scene("main", (args = {}) => {
       "promote-queen",
     ]);
     add([
-      sprite("wknight"),
+      sprite(curTurn[0]+"knight"),
       indexToWorldPos(9,1,true),
       area(),
       scale(1),
@@ -653,7 +646,7 @@ scene("main", (args = {}) => {
       "promote-knight",
     ]);
     add([
-      sprite("wrook"),
+      sprite(curTurn[0]+"rook"),
       indexToWorldPos(9,2,true),
       area(),
       scale(1),
@@ -664,7 +657,7 @@ scene("main", (args = {}) => {
       "promote-rook",
     ]);
     add([
-      sprite("wbishop"),
+      sprite(curTurn[0]+"bishop"),
       indexToWorldPos(9,3,true),
       area(),
       scale(1),
@@ -674,6 +667,26 @@ scene("main", (args = {}) => {
       "promote-peice",
       "promote-bishop",
     ]);
+    if (promoteHighlight !== null) {
+      let curPos = promoteHighlight.pos
+      promoteHighlight = add([
+        sprite("highlight"),
+        pos(curPos.x, curPos.y),
+        layer("board"),
+        origin("top"),
+        "promote",
+        "promote-border",
+      ]);
+    } else {
+      promoteHighlight = add([
+        sprite("highlight"),
+        indexToWorldPos(9,0,true),
+        layer("board"),
+        origin("top"),
+        "promote",
+        "promote-border",
+      ]);
+    }
   }
 
   function init() {
@@ -750,10 +763,6 @@ scene("main", (args = {}) => {
     } else if (selected === p) {
       selected = null;
     }
-  }); 
-
-  keyPress("f", () => {
-    fullscreen(!fullscreen());
   });
 
   init();
