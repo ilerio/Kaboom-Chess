@@ -34,6 +34,7 @@ scene("main", (args = {}) => {
   let promotePiece = "queen";
   /*
     enPasantObj {
+      piece,
       color,
       x,
       y,
@@ -349,7 +350,6 @@ scene("main", (args = {}) => {
     let y = worldPosToIndex(startPos, false).y;
     let m = null;
     let dir = 1;
-    let promote = false;
     let y1 = 0;
 
     if (color === "w") {
@@ -379,6 +379,7 @@ scene("main", (args = {}) => {
             "capture": true,
           });
         }
+        possibleEnPasant = true;
       }
       if (x-1 >= minIndex && x-1 <= maxIndex) {
         m = indexToWorldPos(x-1, y1, false);
@@ -392,7 +393,15 @@ scene("main", (args = {}) => {
       }
 
       //enPasant capture
+      clog(enPasantObj);
+      clog("possibleEnPasant: "+possibleEnPasant)
       if (enPasantObj !== null) {
+        clog("pieceName: "+getPieceName(enPasantObj.piece));
+        clog("enPasantObj.x: "+enPasantObj.x);
+        clog("enPasantObj.y: "+enPasantObj.y);
+        clog("y: "+y);
+        clog("x+1: "+(x+1));
+        clog("x-1: "+(x-1));
         if (enPasantObj.color !== color && y1 === enPasantObj.y) {
           if (x-1 === enPasantObj.x) {
             m = indexToWorldPos(x-1, y1, false);
@@ -535,23 +544,24 @@ scene("main", (args = {}) => {
     let destYIndex = worldPosToIndex(dest, false).y;
     let pieceName = getPieceName(p);
     let dir = 1;
+    let color = getPieceName(p)[0];
 
-    if (getPieceName(p)[0] === "b") {
+    if (color === "b") {
       dir *= -1;
     }
     
     //enPasant
-    if (possibleEnPasant === true && (Math.abs(startYIndex - destYIndex) === 2)) {
-      enPasantObj = {
-        "piece": p,
-        "color": pieceName[0],
-        "x": destXIndex,
-        "y": (destYIndex+(1*(dir*dir))),
-        "dest": dest, //*
-        "turn": 0,
+    if (possibleEnPasant === true) {
+      if (Math.abs(startYIndex - destYIndex) === 2) {
+        enPasantObj = {
+          "piece": p,
+          "color": pieceName[0],
+          "x": destXIndex,
+          "y": (destYIndex+(1*(color === "w" ? +1 : -1))),
+          "dest": dest, //*
+          "turn": 0,
+        }
       }
-      possibleEnPasant = false;
-    } else {
       possibleEnPasant = false;
     }
 
@@ -577,10 +587,9 @@ scene("main", (args = {}) => {
         if (enPasantObj.x === destXIndex && enPasantObj.y === destYIndex) {
           let x = destXIndex;
           let y = destYIndex+(1*(dir));
-          let p = board[y][x];
-          clog("x: "+ x);
-          clog("y: "+ y);
-          clog(p);
+          let p = board[y][x].piece;
+          destroy(p);
+          board[y][x].piece = null;
         }
       }
     }
