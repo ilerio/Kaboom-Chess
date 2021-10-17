@@ -42,8 +42,9 @@ scene("main", (args = {}) => {
       turn, // how many moves it has been since this was set
     }
   */
-  let possibleEnPasant = false;
   let enPasantObj = null;
+  let possibleEnPasant = false;
+
 
   let fiftyMoveRule = 0
 
@@ -638,6 +639,7 @@ scene("main", (args = {}) => {
     let destPiece = board[destYIndex][destXIndex].piece;
     if (destPiece !== null) {
       destroy(destPiece);
+      fiftyMoveRule = 0;
     }
 
     //promote pawn
@@ -661,6 +663,8 @@ scene("main", (args = {}) => {
           board[y][x].piece = null;
         }
       }
+
+      fiftyMoveRule = 0;
     }
 
     if (enPasantObj !== null) {
@@ -683,8 +687,10 @@ scene("main", (args = {}) => {
       curTurn = "white";
     }
     drawPromote();
-
-    // TODO: 50 move rule 
+    fiftyMoveRule + 0.5;
+    if (fiftyMoveRule > 50) {
+      //draw TODO
+    }
   }
 
   function isMoveCapture(move, color) {
