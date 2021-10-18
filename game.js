@@ -44,9 +44,16 @@ scene("main", (args = {}) => {
   */
   let enPasantObj = null;
   let possibleEnPasant = false;
+  let fiftyMoveRule = 0;
 
-
-  let fiftyMoveRule = 0
+  /*
+    king {
+      pos,
+      isInCheck,
+    }
+  */
+  let whiteKing = null;
+  let blackKing = null;
 
   let canCastle = {
     whiteQeenSide: true,
@@ -686,11 +693,13 @@ scene("main", (args = {}) => {
     } else {
       curTurn = "white";
     }
-    drawPromote();
-    fiftyMoveRule + 0.5;
+
+    fiftyMoveRule += 0.5;
     if (fiftyMoveRule > 50) {
       //draw TODO
     }
+
+    drawPromote();
   }
 
   function isMoveCapture(move, color) {
