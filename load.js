@@ -15,6 +15,7 @@ export function loadAssets() {
   loadSprite("border", "sprites/border.png");
   loadSprite("move", "sprites/move.png");
   loadSprite("attack", "sprites/attack.png");
-  loadSound("piece_capture", "sounds/piece_capture.mp3");
-  loadSound("piece_move", "sounds/piece_move.mp3");
+  loadSound("capture", "sounds/capture.mp3");
+  loadSound("move", "sounds/move.mp3");
+  loadSound("check", "sounds/check.mp3");
 }
