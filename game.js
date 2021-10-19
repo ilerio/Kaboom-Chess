@@ -48,8 +48,10 @@ scene("main", (args = {}) => {
 
   /*
     king {
-      pos,
+      piece,
       isInCheck,
+      canLongCastle,
+      canShortCastle,
     }
   */
   let whiteKing = null;
@@ -228,6 +230,21 @@ scene("main", (args = {}) => {
 
         if (board[i][j].piece !== null) {
           const p = drawPiece(indexToWorldPos(j,i,false), board[i][j].piece);
+          if (board[i][j].piece === "wking" && whiteKing === null) {
+            whiteKing = {
+              "piece": p,
+              "isInCheck": false,
+              "canLongCastle": true,
+              "canShortCastle": true,
+            }
+          } else if (board[i][j].piece === "bking" && blackKing === null) {
+            blackKing = {
+              "piece": p,
+              "isInCheck": false,
+              "canLongCastle": true,
+              "canShortCastle": true,
+            }
+          }
           board[i][j].piece = p;
         }
       }
@@ -823,7 +840,7 @@ scene("main", (args = {}) => {
   }
 
   function init() {
-    loadFEN("rnbqkbnr/pppppppp/8/2k5/4K3/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1");
+    loadFEN("3r2k1/p4pp1/5b1p/1r2p3/2p5/P5P1/KPP2P1P/4q3 w - Rxb5");
     drawBoard();
     drawPieces();
     drawPromote();
