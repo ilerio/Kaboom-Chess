@@ -150,17 +150,17 @@ scene("main", (args = {}) => {
       let cur = piecePos[i];
       if (isNumeric(cur)) {
         for (let j = 0; j < cur; j++) {
-          board[rankIndex][fileIndex].id = rankLetterMap[rankIndex]+fileLetterMap[fileIndex];
-          board[rankIndex][fileIndex].piece = null;
-          fileIndex++;
+          board[fileIndex][rankIndex].id = rankLetterMap[rankIndex]+fileLetterMap[fileIndex];
+          board[fileIndex][rankIndex].piece = null;
+          rankIndex++;
         }
       } else if (cur === "/") {
-        rankIndex++;
-        fileIndex = 0;
-      } else {
-        board[rankIndex][fileIndex].id = rankLetterMap[rankIndex]+fileLetterMap[fileIndex];
-        board[rankIndex][fileIndex].piece = pieceSpriteMap[cur];
         fileIndex++;
+        rankIndex = 0;
+      } else {
+        board[fileIndex][rankIndex].id = rankLetterMap[rankIndex]+fileLetterMap[fileIndex];
+        board[fileIndex][rankIndex].piece = pieceSpriteMap[cur];
+        rankIndex++;
       }
     }
   }
