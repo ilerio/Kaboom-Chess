@@ -165,40 +165,48 @@ scene("main", (args = {}) => {
     }
   }
 
-  function drawBoard() {
+  function drawIndexLabels() {
     for(let i = 0; i < 8; i++) {
       for (let j = 0; j < 8; j++) {
-        // TODO: use indexToWorldPos()
         let x = (size*j) + offsetX;
         let y = (size*i) + offsetY;
-
-        //labeling
+        // index labeling
         if (j === 0) {
-          add ([
-            text(fileLetterMap[i], {size: 30}),
-            pos(x - 25,y + 20),
-          ]);
-
-          //////////DEBUG TODO: DELETE
           add ([
             text(i.toString(), {size: 30}),
             pos(x - 50,y + 20),
             color(255, 0, 0),
           ]);
-          //////////DEBUG TODO: DELETE
+        }
+        if (i === 7) {
+          add ([
+            text(j.toString(), {size: 30}),
+            pos(x + 20,y + 90),
+            color(255, 0, 0),
+          ]);
+        }
+      }
+    }
+  }
+
+  function drawBoard() {
+    for(let i = 0; i < 8; i++) {
+      for (let j = 0; j < 8; j++) {
+        let x = (size*j) + offsetX;
+        let y = (size*i) + offsetY;
+
+        // labeling
+        if (j === 0) {
+          add ([
+            text(fileLetterMap[i], {size: 30}),
+            pos(x - 25,y + 20),
+          ]);
         }
         if (i === 7) {
           add ([
             text(rankLetterMap[j], {size: 30}),
             pos(x + 20,y + 60),
           ]);
-          //////////DEBUG TODO: DELETE
-          add ([
-            text(j.toString(), {size: 30}),
-            pos(x + 20,y + 90),
-            color(255, 0, 0),
-          ]);
-          //////////DEBUG TODO: DELETE
         }
         
         const tile = add([
@@ -845,6 +853,9 @@ scene("main", (args = {}) => {
     drawBoard();
     drawPieces();
     drawPromote();
+
+    //debug | TODO: DELETE
+    drawIndexLabels();
   }
 
   clicks("move", (m) => {
