@@ -57,12 +57,8 @@ scene("main", (args = {}) => {
   let whiteKing = null;
   let blackKing = null;
 
-  let canCastle = {
-    whiteQeenSide: true,
-    whiteKingSide: true,
-    blackQeenSide: true,
-    blackKingSide: true,
-  }
+  let pinnedPeicesBlack = [];
+  let pinnedPeicesWhite = [];
 
   let board = [
     [{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null}],
@@ -152,20 +148,19 @@ scene("main", (args = {}) => {
     piecePos = fenArr[0].split("")
     for (let i = 0; i < piecePos.length; i++) {
       let cur = piecePos[i];
-      let temp = 0;
       if (isNumeric(cur)) {
         for (let j = 0; j < cur; j++) {
-          board[fileIndex][rankIndex].id = rankLetterMap[rankIndex]+fileLetterMap[fileIndex];
-          board[fileIndex][rankIndex].piece = null;
-          rankIndex++;
+          board[rankIndex][fileIndex].id = rankLetterMap[rankIndex]+fileLetterMap[fileIndex];
+          board[rankIndex][fileIndex].piece = null;
+          fileIndex++;
         }
       } else if (cur === "/") {
-        fileIndex++;
-        rankIndex = 0;
-      } else {
-        board[fileIndex][rankIndex].id = rankLetterMap[rankIndex]+fileLetterMap[fileIndex];
-        board[fileIndex][rankIndex].piece = pieceSpriteMap[cur];
         rankIndex++;
+        fileIndex = 0;
+      } else {
+        board[rankIndex][fileIndex].id = rankLetterMap[rankIndex]+fileLetterMap[fileIndex];
+        board[rankIndex][fileIndex].piece = pieceSpriteMap[cur];
+        fileIndex++;
       }
     }
   }
@@ -639,6 +634,7 @@ scene("main", (args = {}) => {
     let pieceName = getPieceName(p);
     let dir = 1;
     let color = getPieceName(p)[0];
+    let moveType = "move"; // capture | move | check
 
     if (color === "b") {
       dir *= -1;
@@ -664,6 +660,7 @@ scene("main", (args = {}) => {
     if (destPiece !== null) {
       destroy(destPiece);
       fiftyMoveRule = 0;
+      moveType = "capture";
     }
 
     //promote pawn
@@ -685,6 +682,7 @@ scene("main", (args = {}) => {
           let p = board[y][x].piece;
           destroy(p);
           board[y][x].piece = null;
+          moveType = "capture";
         }
       }
 
@@ -716,6 +714,9 @@ scene("main", (args = {}) => {
       //draw TODO
     }
 
+    // check -> set moveType = "check";
+
+    play(moveType);
     drawPromote();
   }
 
@@ -840,7 +841,7 @@ scene("main", (args = {}) => {
   }
 
   function init() {
-    loadFEN("3r2k1/p4pp1/5b1p/1r2p3/2p5/P5P1/KPP2P1P/4q3 w - Rxb5");
+    loadFEN(initFEN);
     drawBoard();
     drawPieces();
     drawPromote();
@@ -913,6 +914,6 @@ scene("main", (args = {}) => {
   init();
 
   //debug
-  //clog(board[0][0].tile);
+  //clog(board[0][0]);
 });
 go("main");
