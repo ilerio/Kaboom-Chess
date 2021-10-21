@@ -29,6 +29,8 @@ scene("main", (args = {}) => {
 
   let curHover = null;
   let selected = null;
+  let moveFromHighlight = null;
+  let moveToHighlight = null;
   let curTurn = "white";
   let promoteHighlight = null;
   let promotePiece = "queen";
@@ -49,13 +51,29 @@ scene("main", (args = {}) => {
   /*
     king {
       piece,
+      x,
+      y,
       isInCheck,
       canLongCastle,
       canShortCastle,
     }
   */
-  let whiteKing = null;
-  let blackKing = null;
+  let whiteKing = {
+    "piece": null,
+    "x": 0,
+    "y": 0,
+    "isInCheck": false,
+    "canLongCastle": true,
+    "canShortCastle": true,
+  };
+  let blackKing = {
+    "piece": null,
+    "x": 0,
+    "y": 0,
+    "isInCheck": false,
+    "canLongCastle": true,
+    "canShortCastle": true,
+  };
 
   let pinnedPeicesBlack = [];
   let pinnedPeicesWhite = [];
@@ -124,12 +142,12 @@ scene("main", (args = {}) => {
     "g":6,
     "h":7,
   }
-  let hoverHight = add([
+  let hoverHighlight = add([
     sprite("border"),
     pos(offsetX, offsetY),
     layer("boarder"),
   ]);
-  hoverHight.hidden = true
+  hoverHighlight.hidden = true
 
   function isNumeric(str) {
     if (typeof str !== "string") return false
@@ -233,20 +251,14 @@ scene("main", (args = {}) => {
 
         if (board[i][j].piece !== null) {
           const p = drawPiece(indexToWorldPos(j,i,false), board[i][j].piece);
-          if (board[i][j].piece === "wking" && whiteKing === null) {
-            whiteKing = {
-              "piece": p,
-              "isInCheck": false,
-              "canLongCastle": true,
-              "canShortCastle": true,
-            }
-          } else if (board[i][j].piece === "bking" && blackKing === null) {
-            blackKing = {
-              "piece": p,
-              "isInCheck": false,
-              "canLongCastle": true,
-              "canShortCastle": true,
-            }
+          if (board[i][j].piece === "wking") {
+            whiteKing.piece = p;
+            whiteKing.x = i;
+            whiteKing.y = j;
+          } else if (board[i][j].piece === "bking") {
+            blackKing.piece = p;
+            blackKing.x = i;
+            blackKing.y = j;
           }
           board[i][j].piece = p;
         }
@@ -316,29 +328,30 @@ scene("main", (args = {}) => {
 
     let moveList = [];
     let pieceName = getPieceName(p);
+    let color = pieceName[0];
 
     switch (pieceName) {
       case "wpawn": case "bpawn": 
-        moveList = pawnMoveList(p.pos, pieceName[0]);
+        moveList = pawnMoveList(p.pos, color);
         break;
       case "wrook": case "brook": 
-        moveList = rookMoveList(p.pos, pieceName[0]);
+        moveList = rookMoveList(p.pos, color);
         break;
       case "wknight": case "bknight":
-        moveList = knightMoveList(p.pos, pieceName[0]);
+        moveList = knightMoveList(p.pos, color);
         break;
       case "wbishop": case "bbishop": 
-        moveList = bishopMoveList(p.pos, pieceName[0]);        
+        moveList = bishopMoveList(p.pos, color);        
         break;
       case "wqueen": case "bqueen":
-        moveList = queenMoveList(p.pos, pieceName[0]);            
+        moveList = queenMoveList(p.pos, color);            
         break;
       case "wking": case "bking":
-        moveList = kingMoveList(p.pos, pieceName[0]);            
+        moveList = kingMoveList(p.pos, color);            
         break;
     }
 
-    drawMoves(moveList);
+    return moveList;
   }
 
   function drawMoves(moves) {
@@ -396,6 +409,18 @@ scene("main", (args = {}) => {
           "pos": m,
           "capture": false,
         });
+
+        // first move
+        if ((y === 6 && color === "w") || (y === 1 && color === "b")) {
+          if (board[y+(2*dir)][x].piece === null) {
+            m = indexToWorldPos(x, (y+(2*dir)), false);
+            moveList.push({
+              "pos": m,
+              "capture": false,
+            });
+            possibleEnPasant = true;
+          }
+        }
       }
 
       // capture
@@ -435,18 +460,6 @@ scene("main", (args = {}) => {
             });
           }
         }
-      }
-    }
-
-    // first move
-    if ((y === 6 && color === "w") || (y === 1 && color === "b")) {
-      if (board[y+(2*dir)][x].piece === null) {
-        m = indexToWorldPos(x, (y+(2*dir)), false);
-        moveList.push({
-          "pos": m,
-          "capture": false,
-        });
-        possibleEnPasant = true;
       }
     }
 
@@ -526,8 +539,6 @@ scene("main", (args = {}) => {
     return moveList;
   }
 
-  function kingMoveList(startPos, color) {return []}
-
   function bishopMoveList(startPos, color) {
     let moveList = [];
     let upRight = [];
@@ -591,17 +602,59 @@ scene("main", (args = {}) => {
             "pos": m,
             "capture": true,
           });
-        } else {
-          if (!moveToPosHasFriendly(m, color)) {
-            moveList.push({
-              "pos": m,
-              "capture": false,
-            });
-          }
         }
         break;
       }
     }
+    return moveList;
+  }
+
+  function kingMoveList(startPos, color) {
+    let moveList = [];
+    let x = worldPosToIndex(startPos, false).x;
+    let y = worldPosToIndex(startPos, false).y;
+    let destX = 0;
+    let destY = 0;
+    let m = null;
+
+    /*
+      0,+1  | 0,-1
+      +1,0  | -1,0
+      +1,+1 | -1,-1
+      +1,-1 | -1, +1
+    */
+    let kingMoveIndexs = [
+      {"x": x,"y":y+1},
+      {"x": x+1,"y":y+1},
+      {"x": x+1,"y":y},
+      {"x": x+1,"y":y-1},
+      {"x": x,"y":y-1},
+      {"x": x-1,"y":y-1},
+      {"x": x-1,"y":y},
+      {"x": x-1,"y":y+1},
+    ]
+
+    for (let i = 0; i < kingMoveIndexs.length; i++) {
+      destX = kingMoveIndexs[i].x;
+      destY = kingMoveIndexs[i].y;
+      if ((destX >= minIndex && destX <= maxIndex) && (destY >= minIndex && destY <= maxIndex)) {
+        m = indexToWorldPos(destX,destY);
+        if (!moveToPosOccupied(m,color)) {
+          moveList.push({
+            "pos": m,
+            "capture": false
+          });
+        } else {
+          if (!moveToPosHasFriendly(m, color)) {
+            moveList.push({
+              "pos": m,
+              "capture": true,
+            });
+          }
+        }
+      }
+    }
+
     return moveList;
   }
 
@@ -634,6 +687,25 @@ scene("main", (args = {}) => {
     return {"x": x, "y": y};
   }
 
+  function fromToHighlight(from, to) {
+    if (moveFromHighlight !== null) destroy(moveFromHighlight);
+    moveFromHighlight = add([
+      sprite("highlight"),
+      pos(from.x,from.y),
+      layer("board"),
+      origin("center"),
+      "highlight-from",
+    ]);
+    if (moveToHighlight !== null) destroy(moveToHighlight);
+    moveToHighlight = add([
+      sprite("highlight"),
+      pos(to.x,to.y),
+      layer("board"),
+      origin("center"),
+      "highlight-to",
+    ]);
+  }
+
   function movePiece(p, dest) {
     let startXIndex = worldPosToIndex(p.pos, false).x;
     let startYIndex = worldPosToIndex(p.pos, false).y;
@@ -642,11 +714,21 @@ scene("main", (args = {}) => {
     let pieceName = getPieceName(p);
     let dir = 1;
     let color = getPieceName(p)[0];
+    let x = 0;
+    let y = 0;
+    let temp = null;
+    let moveListDest = null;
+    let moveList = [];
     let moveType = "move"; // capture | move | check
+
+    fromToHighlight(p.pos, dest)
 
     if (color === "b") {
       dir *= -1;
     }
+
+    //king
+    //casteling
     
     //enPasant
     if (possibleEnPasant === true) {
@@ -674,7 +756,7 @@ scene("main", (args = {}) => {
     //promote pawn
     if ((p.is("wpawn") || p.is("bpawn"))) {
       if (destYIndex === 7 || destYIndex === 0) {
-        let temp = p;
+        temp = p;
         selected = null;
         destroyAll("highlight");
         destroyAll("move");
@@ -685,9 +767,9 @@ scene("main", (args = {}) => {
       //enPasant capture
       if(enPasantObj !== null) {
         if (enPasantObj.x === destXIndex && enPasantObj.y === destYIndex) {
-          let x = destXIndex;
-          let y = destYIndex+(1*(dir));
-          let p = board[y][x].piece;
+          x = destXIndex;
+          y = destYIndex+(1*(dir));
+          p = board[y][x].piece;
           destroy(p);
           board[y][x].piece = null;
           moveType = "capture";
@@ -848,8 +930,21 @@ scene("main", (args = {}) => {
     }
   }
 
+  function drawResult(result) {
+
+  }
+
+  function getFenInput() {
+    let fen = prompt("Fen:", initFEN);
+    if (fen == null || fen == "") {
+      //Cancelled
+    } else {
+      loadFEN(fen);
+    }
+  }
+
   function init() {
-    loadFEN(initFEN);
+    loadFEN("r3k2r/ppp2ppp/bb6/8/8/BB6/PPP2PPP/R3K2R w KQkq - 0 1");
     drawBoard();
     drawPieces();
     drawPromote();
@@ -892,13 +987,13 @@ scene("main", (args = {}) => {
 
   hovers("tile", (t) => {
     if (curHover !== t) {
-      hoverHight.pos = t.pos;
-      readd(hoverHight);
+      hoverHighlight.pos = t.pos;
+      readd(hoverHighlight);
       let hoverPiece = objectAtid(t._id).piece;
       if (hoverPiece !== null) {
-        hoverHight.hidden = false;
+        hoverHighlight.hidden = false;
       } else {
-        hoverHight.hidden = true;
+        hoverHighlight.hidden = true;
       }
     }
     curHover = t;
@@ -916,7 +1011,7 @@ scene("main", (args = {}) => {
         origin("center"),
         "highlight",
       ]);
-      generateMoveList(p);
+      drawMoves(generateMoveList(p));
     } else if (selected === p) {
       selected = null;
     }
