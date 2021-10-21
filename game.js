@@ -1,5 +1,5 @@
 //import kaboom from "https://unpkg.com/kaboom@next/dist/kaboom.mjs";
-import kaboom from "https://unpkg.com/kaboom@2000.0.0-beta.24/dist/kaboom.mjs"
+import kaboom from "https://unpkg.com/kaboom@2000.0.0/dist/kaboom.mjs"
 import {dlog, clog} from "./helpers.js"
 import {loadAssets} from "./load.js"
 //import {} from "./board.js"
@@ -583,7 +583,7 @@ scene("main", (args = {}) => {
     let yi = 0;
     let m = null;
 
-    for (let i = 1; i < maxIndex; i++) {
+    for (let i = 1; i <= maxIndex; i++) {
       xi = startX + (i*dirX);
       yi = startY + (i*dirY);
 
@@ -930,8 +930,8 @@ scene("main", (args = {}) => {
     }
   }
 
-  function drawResult(result) {
-
+  function result(res) {
+    go("result", res);
   }
 
   function getFenInput() {
@@ -1022,4 +1022,38 @@ scene("main", (args = {}) => {
   //debug
   //clog(board[0][0]);
 });
+
+scene("result", (res) => {
+  const centerX = ((width()/2));
+  const centerY = ((height()/2));
+  add ([
+    text(res, {size: 50}),
+    pos(centerX,centerY),
+    origin("center")
+  ]);
+  const btn = add([
+    rect(120, 30),
+    pos(centerX,centerY + 60),
+    outline(1),
+    layer("board"),
+    origin("center"),
+    area(),
+    color(0,0,0),
+  ]);
+  add ([
+    text("new game", {size: 20}),
+    pos(centerX,centerY + 60),
+    origin("center"),
+  ]);
+  btn.clicks(() => {
+    go("main");
+  });
+  btn.hovers(() => {
+    btn.color = rgb(255,255,255);
+  }, () => {
+    btn.color = rgb(0,0,0);
+    btn.outline = outline(1);
+  });
+});
+
 go("main");
