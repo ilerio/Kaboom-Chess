@@ -161,8 +161,10 @@ scene("main", (args = {}) => {
     let piecePos = [];
 
     fenArr = fen.split(" "); //TODO: implement rest of FEN
-    //console.log("fenArr[0]: ", fenArr[0])
 
+    // TODO: some error handling. Verify valid fen string.
+    
+    // fenArr[0] - Peice positions
     piecePos = fenArr[0].split("")
     for (let i = 0; i < piecePos.length; i++) {
       let cur = piecePos[i];
@@ -182,11 +184,21 @@ scene("main", (args = {}) => {
       }
     }
 
+    // fenArr[1] - Turn - Acive color
     if (fenArr[1] === 'w') {
       curTurn = "white";
     } else {
       curTurn = "black";
     }
+
+    // fenArr[2] - Castling Rights
+
+    // fenArr[3] - En passant target
+
+    // fenArr[4] - Halfmove clock
+    fiftyMoveRule = parseInt(fenArr[4]);
+
+    // fenArr[5] - Fullmove clock
   }
 
   function drawIndexLabels() {
@@ -664,6 +676,11 @@ scene("main", (args = {}) => {
     return moveList;
   }
 
+  // overload function assumes not a tile
+  function indexToWorldPos(destX, destY) {
+    return indexToWorldPos(destX, destY, false)
+  }
+
   function indexToWorldPos(destX, destY, tile) {
     let x = 0;
     let y = 0;
@@ -676,6 +693,11 @@ scene("main", (args = {}) => {
       y = (size*destY) + offsetY + piecePosOffset;
     }
     return pos(x,y);
+  }
+
+  // overload function assumes not a tile
+  function worldPosToIndex(pos) {
+    return worldPosToIndex(pos, false)
   }
 
   function worldPosToIndex(pos, tile) {
@@ -805,15 +827,16 @@ scene("main", (args = {}) => {
       curTurn = "white";
     }
 
-    fiftyMoveRule += 0.5;
-    if (fiftyMoveRule > 50) {
+    fiftyMoveRule++;
+    if (fiftyMoveRule >= 100) {
       result("50 move draw.")
     }
 
     // check -> set moveType = "check";
 
     play(moveType);
-    drawPromote();
+    destroyAll("promote");
+    drawPromoteSelection();
   }
 
   function isMoveCapture(move, color) {
@@ -854,12 +877,13 @@ scene("main", (args = {}) => {
     return isMoveCapture(move, color) || moveToPosHasFriendly(move, color);
   }
 
-  function drawPromote() {
+  function drawPromoteSelection() {
     add ([
       text("promote", {size: 20}),
       indexToWorldPos(9,0,true),
       layer("ui"),
       origin("bot"),
+      "promote",
     ]);
     add([
       rect(size, (size*4)),
@@ -950,14 +974,15 @@ scene("main", (args = {}) => {
   }
 
   function init() {
-    let fen = "rnb1kbnr/pppp1ppp/8/8/8/8/PPPPQPPP/RNB1KBNR b KQkq - 0 1";
+    let fen = "rnb1kbnr/p1pqpppp/3p4/6P1/1p6/4P3/PPPPQP1P/RNB1KBNR b KQkq - 2 1";
     loadFEN(fen);
     drawBoard();
     drawPieces();
-    drawPromote();
+    drawPromoteSelection();
 
     //debug | TODO: DELETE
     drawIndexLabels();
+
   }
 
   clicks("move", (m) => {
@@ -1027,7 +1052,11 @@ scene("main", (args = {}) => {
   init();
 
   //debug
-  //clog(board[0][0]);
+  keyPress("d", () => {
+    clog("Num Objs: "+debug.objCount());
+    clog("50 Move: "+fiftyMoveRule);
+    clog(" ");
+  });
 });
 
 scene("result", (res) => {
