@@ -75,8 +75,8 @@ scene("main", (args = {}) => {
     "canShortCastle": true,
   };
 
-  let pinnedPeicesBlack = [];
-  let pinnedPeicesWhite = [];
+  let attackedSquaresWhite = [];
+  let attackedSquaresBlack = [];
 
   let board = [
     [{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null}],
@@ -147,7 +147,7 @@ scene("main", (args = {}) => {
     pos(offsetX, offsetY),
     layer("boarder"),
   ]);
-  hoverHighlight.hidden = true
+  hoverHighlight.hidden = true;
 
   function isNumeric(str) {
     if (typeof str !== "string") return false
@@ -180,6 +180,12 @@ scene("main", (args = {}) => {
         board[fileIndex][rankIndex].piece = pieceSpriteMap[cur];
         rankIndex++;
       }
+    }
+
+    if (fenArr[1] === 'w') {
+      curTurn = "white";
+    } else {
+      curTurn = "black";
     }
   }
 
@@ -801,7 +807,7 @@ scene("main", (args = {}) => {
 
     fiftyMoveRule += 0.5;
     if (fiftyMoveRule > 50) {
-      //draw TODO
+      result("50 move draw.")
     }
 
     // check -> set moveType = "check";
@@ -944,7 +950,8 @@ scene("main", (args = {}) => {
   }
 
   function init() {
-    loadFEN("r3k2r/ppp2ppp/bb6/8/8/BB6/PPP2PPP/R3K2R w KQkq - 0 1");
+    let fen = "rnb1kbnr/pppp1ppp/8/8/8/8/PPPPQPPP/RNB1KBNR b KQkq - 0 1";
+    loadFEN(fen);
     drawBoard();
     drawPieces();
     drawPromote();
@@ -1056,4 +1063,6 @@ scene("result", (res) => {
   });
 });
 
-go("main");
+ready(() => {
+  go("main");
+});
