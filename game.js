@@ -46,7 +46,8 @@ scene("main", (args = {}) => {
   */
   let enPasantObj = null;
   let possibleEnPasant = false;
-  let fiftyMoveRule = 0;
+  let halfMoveClock = 0;
+  let fullMoveClock = 0;
 
   /*
     king {
@@ -63,31 +64,23 @@ scene("main", (args = {}) => {
     "x": 0,
     "y": 0,
     "isInCheck": false,
-    "canLongCastle": true,
-    "canShortCastle": true,
+    "canLongCastle": false,
+    "canShortCastle": false,
   };
   let blackKing = {
     "piece": null,
     "x": 0,
     "y": 0,
     "isInCheck": false,
-    "canLongCastle": true,
-    "canShortCastle": true,
+    "canLongCastle": false,
+    "canShortCastle": false,
   };
 
   let attackedSquaresWhite = [];
   let attackedSquaresBlack = [];
 
-  let board = [
-    [{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null}],
-    [{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null}],
-    [{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null}],
-    [{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null}],
-    [{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null}],
-    [{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null}],
-    [{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null}],
-    [{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null}],
-  ]
+  let board = [];
+
   let pieceSpriteMap = {
     "k":"bking",
     "p":"bpawn",
@@ -142,6 +135,7 @@ scene("main", (args = {}) => {
     "g":6,
     "h":7,
   }
+
   let hoverHighlight = add([
     sprite("border"),
     pos(offsetX, offsetY),
@@ -159,12 +153,18 @@ scene("main", (args = {}) => {
     let fileIndex = 0;
     let rankIndex = 0;
     let piecePos = [];
+    let castelingRights = [];
+    let rank = '';
+    let file = '';
+    let x = 0;
+    let y = 0;
 
-    fenArr = fen.split(" "); //TODO: implement rest of FEN
+    fenArr = fen.split(" ");
 
     // TODO: some error handling. Verify valid fen string.
+    // currently invalid fen string will blow up program
     
-    // fenArr[0] - Peice positions
+    // fenArr[0] - Piece positions
     piecePos = fenArr[0].split("")
     for (let i = 0; i < piecePos.length; i++) {
       let cur = piecePos[i];
@@ -192,13 +192,48 @@ scene("main", (args = {}) => {
     }
 
     // fenArr[2] - Castling Rights
+    castelingRights = fenArr[2].split("");
+    for (let i = 0; i < castelingRights.length; i++) {
+      if (castelingRights[i] === '-') {
+        whiteKing.canLongCastle = false;
+        whiteKing.canShortCastle = false;
+        blackKing.canLongCastle = false;
+        blackKing.canShortCastle = false;
+        break;
+      }
+      switch (castelingRights[i]) {
+        case "K": 
+          whiteKing.canShortCastle = true;
+          break;
+        case "Q": 
+          whiteKing.canLongCastle = true;
+          break;
+        case "k": 
+          blackKing.canShortCastle = true;
+          break;
+        case "q": 
+          blackKing.canLongCastle = true;
+          break;
+      }
+    }
 
     // fenArr[3] - En passant target
+    if (fenArr[3] !== "-") {
+      file = fenArr[3][0];
+      rank = fenArr[3][1];
+      clog("file: "+file);
+      clog("rank: "+rank);
+      y = fileLetterUnMap[file];
+      x = rankLetterUnMap[rank];
+      clog("x: "+x);
+      clog("y: "+y); //TODO: finish this
+    }
 
     // fenArr[4] - Halfmove clock
-    fiftyMoveRule = parseInt(fenArr[4]);
+    halfMoveClock = parseInt(fenArr[4]);
 
     // fenArr[5] - Fullmove clock
+    fullMoveClock = parseInt(fenArr[5]);
   }
 
   function drawIndexLabels() {
@@ -370,6 +405,14 @@ scene("main", (args = {}) => {
     }
 
     return moveList;
+  }
+
+  function posAttacked() {
+    
+  }
+
+  function drawPosAttacked() {
+
   }
 
   function drawMoves(moves) {
@@ -676,12 +719,7 @@ scene("main", (args = {}) => {
     return moveList;
   }
 
-  // overload function assumes not a tile
-  function indexToWorldPos(destX, destY) {
-    return indexToWorldPos(destX, destY, false)
-  }
-
-  function indexToWorldPos(destX, destY, tile) {
+  function indexToWorldPos(destX, destY, tile = false) {
     let x = 0;
     let y = 0;
 
@@ -700,7 +738,7 @@ scene("main", (args = {}) => {
     return worldPosToIndex(pos, false)
   }
 
-  function worldPosToIndex(pos, tile) {
+  function worldPosToIndex(pos, tile = false) {
     let x = 0;
     let y = 0;
 
@@ -777,7 +815,7 @@ scene("main", (args = {}) => {
     let destPiece = board[destYIndex][destXIndex].piece;
     if (destPiece !== null) {
       destroy(destPiece);
-      fiftyMoveRule = 0;
+      halfMoveClock = 0;
       moveType = "capture";
     }
 
@@ -797,14 +835,14 @@ scene("main", (args = {}) => {
         if (enPasantObj.x === destXIndex && enPasantObj.y === destYIndex) {
           x = destXIndex;
           y = destYIndex+(1*(dir));
-          p = board[y][x].piece;
-          destroy(p);
+          temp = board[y][x].piece;
+          destroy(temp);
           board[y][x].piece = null;
           moveType = "capture";
         }
       }
 
-      fiftyMoveRule = 0;
+      halfMoveClock = 0;
     }
 
     if (enPasantObj !== null) {
@@ -815,6 +853,7 @@ scene("main", (args = {}) => {
       }
     }
 
+    // move piece
     p.pos = dest;
 
     board[destYIndex][destXIndex].piece = p;
@@ -824,18 +863,18 @@ scene("main", (args = {}) => {
     if (pieceName[0] === "w") {
       curTurn = "black";
     } else {
+      fullMoveClock++;
       curTurn = "white";
     }
 
-    fiftyMoveRule++;
-    if (fiftyMoveRule >= 100) {
+    halfMoveClock++;
+    if (halfMoveClock >= 100) {
       result("50 move draw.")
     }
 
     // check -> set moveType = "check";
 
     play(moveType);
-    destroyAll("promote");
     drawPromoteSelection();
   }
 
@@ -878,6 +917,7 @@ scene("main", (args = {}) => {
   }
 
   function drawPromoteSelection() {
+    destroyAll("promote");
     add ([
       text("promote", {size: 20}),
       indexToWorldPos(9,0,true),
@@ -969,12 +1009,26 @@ scene("main", (args = {}) => {
     if (fen == null || fen == "") {
       //Cancelled
     } else {
-      loadFEN(fen);
+      init(fen);
     }
   }
 
-  function init() {
-    let fen = "rnb1kbnr/p1pqpppp/3p4/6P1/1p6/4P3/PPPPQP1P/RNB1KBNR b KQkq - 2 1";
+  function clear() {
+    board = [
+      [{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null}],
+      [{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null}],
+      [{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null}],
+      [{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null}],
+      [{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null}],
+      [{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null}],
+      [{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null}],
+      [{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null}],
+    ];
+    destroyAll("piece")
+  }
+
+  function init(fen = initFEN) {
+    clear();
     loadFEN(fen);
     drawBoard();
     drawPieces();
@@ -982,7 +1036,6 @@ scene("main", (args = {}) => {
 
     //debug | TODO: DELETE
     drawIndexLabels();
-
   }
 
   clicks("move", (m) => {
@@ -1049,14 +1102,25 @@ scene("main", (args = {}) => {
     }
   });
 
-  init();
+  init("3r4/3r2pk/2q1b1pp/p1p5/P1P2N1P/1P6/3RQ1P/3R2K1 b - - 0 1");
 
   //debug
   keyPress("d", () => {
-    clog("Num Objs: "+debug.objCount());
-    clog("50 Move: "+fiftyMoveRule);
+    /*clog("Num Objs: "+debug.objCount());
+    clog("halfMoveClock: "+halfMoveClock);
+    clog("fullMoveClock: "+fullMoveClock);
+    clog(" ");*/
+    clog("blackKing:");
+    clog(blackKing);
+    clog("whiteKing:");
+    clog(whiteKing);
     clog(" ");
   });
+
+  keyPress("f", () => {
+    getFenInput();
+  });
+
 });
 
 scene("result", (res) => {
