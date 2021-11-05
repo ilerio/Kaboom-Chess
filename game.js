@@ -1,6 +1,5 @@
 //import kaboom from "https://unpkg.com/kaboom@next/dist/kaboom.mjs";
 import kaboom from "https://unpkg.com/kaboom@2000.0.0/dist/kaboom.mjs"
-import {dlog, clog} from "./helpers.js"
 import {loadAssets} from "./load.js"
 //import {} from "./board.js"
 //import {} from "./pieces.js"
@@ -40,12 +39,12 @@ scene("main", (args = {}) => {
       color,
       x,
       y,
-      dest,
       turn, // how many moves it has been since this was set
     }
   */
   let enPasantObj = null;
   let possibleEnPasant = false;
+  let fenEnPasant = '';
   let halfMoveClock = 0;
   let fullMoveClock = 0;
 
@@ -81,7 +80,7 @@ scene("main", (args = {}) => {
 
   let board = [];
 
-  let pieceSpriteMap = {
+  const pieceSpriteMap = {
     "k":"bking",
     "p":"bpawn",
     "n":"bknight",
@@ -95,7 +94,7 @@ scene("main", (args = {}) => {
     "R":"wrook",
     "Q":"wqueen",
   }
-  let fileLetterMap = {
+  const fileLetterMap = {
     0:"8",
     1:"7",
     2:"6",
@@ -105,7 +104,7 @@ scene("main", (args = {}) => {
     6:"2",
     7:"1",
   }
-  let rankLetterMap = {
+  const rankLetterMap = {
     0:"a",
     1:"b",
     2:"c",
@@ -115,7 +114,7 @@ scene("main", (args = {}) => {
     6:"g",
     7:"h",
   }
-  let fileLetterUnMap = {
+  const fileLetterUnMap = {
     "8":0,
     "7":1,
     "6":2,
@@ -154,10 +153,6 @@ scene("main", (args = {}) => {
     let rankIndex = 0;
     let piecePos = [];
     let castelingRights = [];
-    let rank = '';
-    let file = '';
-    let x = 0;
-    let y = 0;
 
     fenArr = fen.split(" ");
 
@@ -219,14 +214,7 @@ scene("main", (args = {}) => {
 
     // fenArr[3] - En passant target
     if (fenArr[3] !== "-") {
-      file = fenArr[3][0];
-      rank = fenArr[3][1];
-      clog("file: "+file);
-      clog("rank: "+rank);
-      y = fileLetterUnMap[file];
-      x = rankLetterUnMap[rank];
-      clog("x: "+x);
-      clog("y: "+y); //TODO: finish this
+      fenEnPasant = fenArr[3];
     }
 
     // fenArr[4] - Halfmove clock
@@ -296,6 +284,7 @@ scene("main", (args = {}) => {
   }
 
   function drawPieces() {
+    let rank, file, x, y, p
     for(let i = 0; i < 8; i++) {
       for (let j = 0; j < 8; j++) {    
 
@@ -316,6 +305,27 @@ scene("main", (args = {}) => {
           board[i][j].piece = p;
         }
       }
+    }
+    if (fenEnPasant !== '') {
+      rank = '';
+      file = '';
+      x = 0;
+      y = 0;
+      p = null;
+
+      rank = fenEnPasant[0];
+      file = fenEnPasant[1];
+      x = rankLetterUnMap[rank];
+      y = fileLetterUnMap[file];
+      p = board[y-1][x].piece;
+      enPasantObj = {
+        "piece": p,
+        "color": getPieceName(p)[0],
+        "x": x,
+        "y": y,
+        "turn": 0,
+      }
+      fenEnPasant = '';
     }
   }
 
@@ -408,7 +418,16 @@ scene("main", (args = {}) => {
   }
 
   function posAttacked() {
-    
+    let p = null;
+    for (let i = 0; i <= maxIndex; i++) {
+      for (let j = 0; j <= maxIndex; j++) {
+        //TODO: finish
+      }
+    }
+  }
+
+  function getAttackingSquares() {
+
   }
 
   function drawPosAttacked() {
@@ -794,7 +813,7 @@ scene("main", (args = {}) => {
     }
 
     //king
-    //casteling
+    //casteling:TODO
     
     //enPasant
     if (possibleEnPasant === true) {
@@ -804,7 +823,6 @@ scene("main", (args = {}) => {
           "color": pieceName[0],
           "x": destXIndex,
           "y": (destYIndex+(1*(color === "w" ? +1 : -1))),
-          "dest": dest, //*
           "turn": 0,
         }
       }
@@ -840,6 +858,7 @@ scene("main", (args = {}) => {
           board[y][x].piece = null;
           moveType = "capture";
         }
+        enPasantObj = null;
       }
 
       halfMoveClock = 0;
@@ -1027,6 +1046,25 @@ scene("main", (args = {}) => {
     destroyAll("piece")
   }
 
+  function logInstanceVariables() {
+    console.log(`curTurn`, curTurn);
+    console.log(`selected`, selected);
+    console.log(`curHover`, curHover);
+    console.log(`moveFromHighlight`, moveFromHighlight);
+    console.log(`moveToHighlight`, moveToHighlight);
+    console.log(`promoteHighlight`, promoteHighlight);
+    console.log(`promotePiece`, promotePiece);
+    console.log(`enPasantObj`, enPasantObj);
+    console.log(`possibleEnPasant`, possibleEnPasant);
+    console.log(`fenEnPasant`, fenEnPasant);
+    console.log(`halfMoveClock`, halfMoveClock);
+    console.log(`fullMoveClock`, fullMoveClock);
+    console.log(`whiteKing`, whiteKing);
+    console.log(`blackKing`, blackKing);
+    console.log(`attackedSquaresWhite`, attackedSquaresWhite);
+    console.log(`attackedSquaresBlack`, attackedSquaresBlack);
+  }
+
   function init(fen = initFEN) {
     clear();
     loadFEN(fen);
@@ -1102,19 +1140,11 @@ scene("main", (args = {}) => {
     }
   });
 
-  init("3r4/3r2pk/2q1b1pp/p1p5/P1P2N1P/1P6/3RQ1P/3R2K1 b - - 0 1");
+  init("rnbqkbnr/ppp1pppp/8/4P3/2Pp4/8/PP1P1PPP/RNBQKBNR b KQkq c3 0 3");
 
   //debug
   keyPress("d", () => {
-    /*clog("Num Objs: "+debug.objCount());
-    clog("halfMoveClock: "+halfMoveClock);
-    clog("fullMoveClock: "+fullMoveClock);
-    clog(" ");*/
-    clog("blackKing:");
-    clog(blackKing);
-    clog("whiteKing:");
-    clog(whiteKing);
-    clog(" ");
+    logInstanceVariables();
   });
 
   keyPress("f", () => {
