@@ -33,6 +33,9 @@ scene("main", (args = {}) => {
   let curTurn = "white";
   let promoteHighlight = null;
   let promotePiece = "queen";
+  let ppw = "queen";
+  let ppb = "queen"
+
   /*
     enPasantObj {
       piece,
@@ -857,8 +860,8 @@ scene("main", (args = {}) => {
           destroy(temp);
           board[y][x].piece = null;
           moveType = "capture";
+          enPasantObj = null;
         }
-        enPasantObj = null;
       }
 
       halfMoveClock = 0;
@@ -936,6 +939,7 @@ scene("main", (args = {}) => {
   }
 
   function drawPromoteSelection() {
+    let q,n,r,b
     destroyAll("promote");
     add ([
       text("promote", {size: 20}),
@@ -953,7 +957,7 @@ scene("main", (args = {}) => {
       area(),
       "promote",
     ]);
-    add([
+    q = add([
       sprite(curTurn[0]+"queen"),
       indexToWorldPos(9,0,true),
       area(),
@@ -964,7 +968,7 @@ scene("main", (args = {}) => {
       "promote-piece",
       "promote-queen",
     ]);
-    add([
+    n = add([
       sprite(curTurn[0]+"knight"),
       indexToWorldPos(9,1,true),
       area(),
@@ -975,7 +979,7 @@ scene("main", (args = {}) => {
       "promote-piece",
       "promote-knight",
     ]);
-    add([
+    r = add([
       sprite(curTurn[0]+"rook"),
       indexToWorldPos(9,2,true),
       area(),
@@ -986,7 +990,7 @@ scene("main", (args = {}) => {
       "promote-piece",
       "promote-rook",
     ]);
-    add([
+    b = add([
       sprite(curTurn[0]+"bishop"),
       indexToWorldPos(9,3,true),
       area(),
@@ -998,7 +1002,40 @@ scene("main", (args = {}) => {
       "promote-bishop",
     ]);
     if (promoteHighlight !== null) {
-      let curPos = promoteHighlight.pos
+      let curPos
+
+      if (curTurn === "white") {
+        switch (ppw) {
+          case "queen":
+            curPos = q.pos;
+            break;
+          case "knight":
+            curPos = n.pos;
+            break;
+          case "rook":
+            curPos = r.pos;
+            break;
+          case "bishop":
+            curPos = b.pos;
+            break;
+        }
+      } else {
+        switch (ppb) {
+          case "queen":
+            curPos = q.pos;
+            break;
+          case "knight":
+            curPos = n.pos;
+            break;
+          case "rook":
+            curPos = r.pos;
+            break;
+          case "bishop":
+            curPos = b.pos;
+            break;
+        }
+      }
+
       promoteHighlight = add([
         sprite("highlight"),
         pos(curPos.x, curPos.y),
@@ -1032,7 +1069,7 @@ scene("main", (args = {}) => {
     }
   }
 
-  function clear() {
+  function clearBoard() {
     board = [
       [{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null}],
       [{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null},{id:"",tile:null,piece:null,pos:null}],
@@ -1066,7 +1103,7 @@ scene("main", (args = {}) => {
   }
 
   function init(fen = initFEN) {
-    clear();
+    clearBoard();
     loadFEN(fen);
     drawBoard();
     drawPieces();
@@ -1100,6 +1137,8 @@ scene("main", (args = {}) => {
     } else if (pp.is("promote-bishop")) {
       promotePiece = "bishop";
     }
+
+    (curTurn === "white") ? ppw = promotePiece : ppb = promotePiece;
   });
 
   hovers("promote-piece", (t) => {
@@ -1140,7 +1179,7 @@ scene("main", (args = {}) => {
     }
   });
 
-  init("rnbqkbnr/ppp1pppp/8/4P3/2Pp4/8/PP1P1PPP/RNBQKBNR b KQkq c3 0 3");
+  init();
 
   //debug
   keyPress("d", () => {
