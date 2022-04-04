@@ -1,7 +1,7 @@
 //import kaboom from "https://unpkg.com/kaboom@next/dist/kaboom.mjs";
 import kaboom from "https://unpkg.com/kaboom@2000.0.0/dist/kaboom.mjs"
 import {loadAssets} from "./load.js"
-import * as gui from "./board.js"
+//import {} from "./board.js"
 //import {} from "./pieces.js"
 
 kaboom({
