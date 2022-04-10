@@ -18,8 +18,8 @@ export function loadAssets() {
   loadSprite("check", "sprites/check.png");
   loadSprite("attacked", "sprites/attacked.png");
   loadSound("capture", "sounds/capture.mp3");
-  //loadSound("move", "sounds/move.mp3");
-  loadSound("move", "sounds/move-swoosh.mp3");
+  loadSound("move", "sounds/move.mp3");
+  //loadSound("move", "sounds/move-swoosh.mp3");
   //loadSound("check", "sounds/check.mp3");
   loadSound("check", "sounds/comic-punch.mp3");
 }
