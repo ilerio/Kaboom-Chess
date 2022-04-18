@@ -1,5 +1,5 @@
-//import kaboom from "https://unpkg.com/kaboom@next/dist/kaboom.mjs";
-import kaboom from "https://unpkg.com/kaboom@2000.0.0/dist/kaboom.mjs"
+import kaboom from "https://unpkg.com/kaboom/dist/kaboom.mjs";
+//import kaboom from "https://unpkg.com/kaboom@2000.0.0/dist/kaboom.mjs"
 import {loadAssets} from "./load.js"
 //import {} from "./board.js"
 //import {} from "./pieces.js"
@@ -12,7 +12,7 @@ kaboom({
 loadAssets();
 
 scene("main", (args = {}) => {
-  layers(["board", "boarder", "piece", "ui"]);
+  layers(["board", "boarder", "piece", "ui"], "game");
 
   const size = 60;
   const offsetX = ((width()/2) - 240);
@@ -1113,19 +1113,19 @@ scene("main", (args = {}) => {
     drawIndexLabels();
   }
 
-  clicks("move", (m) => {
+  onClick("move", (m) => {
     if (selected !== null) {
       movePiece(selected, m.pos);
     }
   });
 
-  clicks("attack", (m) => {
+  onClick("attack", (m) => {
     if (selected !== null) {
       movePiece(selected, m.pos);
     }
   });
 
-  clicks("promote-piece", (pp) => {
+  onClick("promote-piece", (pp) => {
     promoteHighlight.pos = pp.pos;
 
     if (pp.is("promote-queen")) {
@@ -1141,13 +1141,13 @@ scene("main", (args = {}) => {
     (curTurn === "white") ? ppw = promotePiece : ppb = promotePiece;
   });
 
-  hovers("promote-piece", (t) => {
+  onHover("promote-piece", (t) => {
     t.scale = vec2(1.1);
   }, (t) => {
     t.scale = vec2(1);
   });
 
-  hovers("tile", (t) => {
+  onHover("tile", (t) => {
     if (curHover !== t) {
       hoverHighlight.pos = t.pos;
       readd(hoverHighlight);
@@ -1161,7 +1161,7 @@ scene("main", (args = {}) => {
     curHover = t;
   });
 
-  clicks("piece", (p) => {
+  onClick("piece", (p) => {
     destroyAll("highlight");
     destroyAll("move");
     if ((selected === null || selected !== p) && p.is(curTurn)) {
@@ -1182,11 +1182,11 @@ scene("main", (args = {}) => {
   init();
 
   //debug
-  keyPress("d", () => {
+  onKeyPress("d", () => {
     logInstanceVariables();
   });
 
-  keyPress("f", () => {
+  onKeyPress("f", () => {
     getFenInput();
   });
 
@@ -1214,10 +1214,10 @@ scene("result", (res) => {
     pos(centerX,centerY + 60),
     origin("center"),
   ]);
-  btn.clicks(() => {
+  btn.onClick(() => {
     go("main");
   });
-  btn.hovers(() => {
+  btn.onHover(() => {
     btn.color = rgb(255,255,255);
   }, () => {
     btn.color = rgb(0,0,0);
@@ -1225,6 +1225,6 @@ scene("result", (res) => {
   });
 });
 
-ready(() => {
+onLoad(() => {
   go("main");
 });
