@@ -1,5 +1,5 @@
 import kaboom from "https://unpkg.com/kaboom/dist/kaboom.mjs";
-//import kaboom from "https://unpkg.com/kaboom@2000.0.0/dist/kaboom.mjs"
+//import kaboom from "https://unpkg.com/kaboom@2000.2.9/dist/kaboom.mjs"
 import {loadAssets} from "./load.js"
 //import {} from "./board.js"
 //import {} from "./pieces.js"
